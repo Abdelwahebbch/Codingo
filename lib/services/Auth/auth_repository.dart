@@ -18,23 +18,22 @@ class AuthRepository {
         return null;
       }
       rethrow;
-    } catch (e){
-      print(e); 
+    } catch (e) {
+      print(e);
       rethrow;
     }
   }
 
-  Future<void> continueWithGoogle(
-    ) async {
+  Future<void> continueWithGoogle() async {
     try {
-       await appwriteService.account
+      await appwriteService.account
           .createOAuth2Session(provider: OAuthProvider.google);
     } catch (e) {
       rethrow;
     }
   }
 
-  Future<User> signUp(
+  Future<void> signUp(
       {required String email,
       required String password,
       required String name}) async {
@@ -45,19 +44,19 @@ class AuthRepository {
         email: email,
         password: password,
       );
-      return await signIn(email: email, password: password);
+      await signIn(email: email, password: password);
     } catch (e) {
       rethrow;
     }
   }
 
-  Future<User> signIn({required String email, required String password}) async {
+  Future<void> signIn({required String email, required String password}) async {
     try {
       await appwriteService.account.createEmailPasswordSession(
         email: email,
         password: password,
       );
-      return await appwriteService.account.get();
+      await appwriteService.account.get();
     } catch (e) {
       rethrow;
     }

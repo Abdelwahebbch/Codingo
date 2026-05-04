@@ -9,15 +9,42 @@ import 'package:pfe_test/models/user_info_model.dart';
 import 'package:pfe_test/services/Auth/auth_provider.dart';
 import 'package:pfe_test/services/Data/data_repository.dart';
 
-class DataProvider with ChangeNotifier {
+class DataProvider extends ChangeNotifier {
   final DataRepository dataRepository;
-  final AuthProvider authProvider;
+
+  AuthProvider authProvider;
   bool _isLoading = false;
 
-  late UserInfo progress;
-  late bool isFirstLogin;
-  late LearningPath path ; 
-  late Map<String, dynamic> userGoals;
+  UserInfo progress = UserInfo(
+    progLanguage: "not selected",
+    username: "",
+    experience: 0,
+    totalPoints: 0,
+    earnedBadges: [],
+    bio: "",
+    imageId: "",
+    email: "",
+    rank: 0,
+    difficultySelected: "Intermediate",
+    nbMissions: 0,
+    missions: [],
+    badgesProgress: {
+      'debug': 0,
+      'complete': 0,
+      'multipleChoice': 0,
+      'ordering': 0,
+      'singleChoice': 0,
+      'test': 0
+    },
+    showingBadges: [],
+    nbMissionCompletedWithoutHints: 0,
+    totalFailures: 0,
+    totalAIQuestions: 0,
+    elo: 0,
+  );
+  bool isFirstLogin = true;
+  LearningPath? path;
+  Map<String, dynamic>? userGoals;
   bool get isLoading => _isLoading;
 
   DataProvider({required this.dataRepository, required this.authProvider});
@@ -25,7 +52,7 @@ class DataProvider with ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
-        await getUserInfo();
+      await getUserInfo();
     } catch (e) {
       print('Error initializing DataProvider: $e');
     } finally {
@@ -34,15 +61,38 @@ class DataProvider with ChangeNotifier {
     }
   }
 
-  void updateIsFirstLogin() {
+  Future<void> reload() async {
+    _isLoading = true;
+    notifyListeners();
+    await init();
+  }
+
+  void updateIsFirstLogin() async {
     if (isFirstLogin) {
-      dataRepository.updateRow(
-        tableId: "user_profiles",
-        rowId: authProvider.currentUser!.id,
-        data: {'isFirstLogin': false},
-      );
-      isFirstLogin = false;
-      notifyListeners();
+      try {
+        // On CRÉE le document en base de données puisqu'il n'existe pas encore
+        await dataRepository.createRow(
+          tableId: "user_profiles",
+          rowId: authProvider.currentUser!.id,
+          data: {
+            'isFirstLogin': false,
+            'progLanguage': progress.progLanguage,
+            'experience': progress.experience,
+            'totalPoints': progress.totalPoints,
+            'difficulty': progress.difficultySelected,
+            'badgesProgress': jsonEncode(progress.badgesProgress),
+            'earnedBadges': progress.earnedBadges,
+            'nbMission': 0,
+            'totalFailures': 0,
+            'totalAIQuestions': 0,
+            'elo': 0,
+          },
+        );
+        isFirstLogin = false;
+        notifyListeners();
+      } catch (e) {
+        print("Erreur lors de la création du profil utilisateur: $e");
+      }
     }
   }
 
@@ -114,13 +164,49 @@ class DataProvider with ChangeNotifier {
 
   Future<void> getUserInfo() async {
     try {
-      final row = await dataRepository.getRow(
-          tableId: "user_profiles", rowId: authProvider.currentUser!.id);
+      Row? row;
+      try {
+        row = await dataRepository.getRow(
+            tableId: "user_profiles", rowId: authProvider.currentUser!.id);
+      } on AppwriteException catch (e) {
+        if (e.code == 404) {
+          print("Profile not founnd ");
+          isFirstLogin = true;
+          progress = UserInfo(
+            progLanguage: "not selected",
+            username: authProvider.currentUser!.name,
+            experience: 0,
+            totalPoints: 0,
+            earnedBadges: [],
+            bio: "",
+            imageId: "",
+            email: authProvider.currentUser!.email,
+            rank: 0,
+            difficultySelected: "Intermediate",
+            nbMissions: 0,
+            missions: [],
+            badgesProgress: {
+              'debug': 0,
+              'complete': 0,
+              'multipleChoice': 0,
+              'ordering': 0,
+              'singleChoice': 0,
+              'test': 0
+            },
+            showingBadges: [],
+            nbMissionCompletedWithoutHints: 0,
+            totalFailures: 0,
+            totalAIQuestions: 0,
+            elo: 0,
+          );
+          notifyListeners();
+          return;
+        } else {
+          rethrow;
+        }
+      }
       int x = await getRank();
       isFirstLogin = row.data["isFirstLogin"] ?? true;
-      print(row.data["imageId"]);
-      print(authProvider.currentUser!.email);
-      print(row.data["totalPoints"]);
       progress = UserInfo(
         progLanguage: row.data["progLanguage"] ?? "not selected",
         username: authProvider.currentUser!.name,
@@ -134,7 +220,10 @@ class DataProvider with ChangeNotifier {
         difficultySelected: row.data["difficulty"] ?? "Intermediate",
         nbMissions: row.data["nbMission"] ?? 0,
         missions: await getMissions(),
-        badgesProgress: jsonDecode(row.data["badgesProgress"]),
+        // Sécurisation du jsonDecode au cas où le champ serait null
+        badgesProgress: row.data["badgesProgress"] != null
+            ? jsonDecode(row.data["badgesProgress"])
+            : {},
         showingBadges: [],
         nbMissionCompletedWithoutHints:
             row.data["nbMissionCompletedWithoutHints"] ?? 0,
@@ -142,15 +231,15 @@ class DataProvider with ChangeNotifier {
         totalAIQuestions: row.data["totalAIQuestions"] ?? 0,
         elo: row.data["elo"],
       );
+
       if (!isFirstLogin) {
         await getuserGoals();
       }
       try {
-         path = await getLearningPath();
-        //print(path.milestones.first.concepts.length);
+        path = await getLearningPath();
       } on AppwriteException catch (e) {
         if (e.code == 404) {
-          print("Not Found mouch mochkol");
+          print("learning Path not found");
         } else {
           rethrow;
         }
@@ -161,12 +250,12 @@ class DataProvider with ChangeNotifier {
       rethrow;
     }
   }
+
   Future<LearningPath> getLearningPath() async {
     List<LearningPathMilestone> milestones = [];
     List<Concept> concepts = [];
     try {
       var row = await dataRepository.getRow(
-         
           tableId: "learnig_paths",
           rowId: authProvider.currentUser!.id,
           queries: [
@@ -195,6 +284,7 @@ class DataProvider with ChangeNotifier {
       rethrow;
     }
   }
+
   Future<void> getuserGoals() async {
     final row = await dataRepository.getRow(
         tableId: "user_goals", rowId: authProvider.currentUser!.id);
@@ -380,7 +470,7 @@ class DataProvider with ChangeNotifier {
           data: {'nbMission': progress.nbMissions});
       int? missionNb;
       int missionDiffculty = 0;
-      int missionPoints=0;
+      int missionPoints = 0;
       for (int i = 0; i < progress.missions.length; i++) {
         if (progress.missions[i].id == id) {
           progress.missions[i].isCompleted = true;
@@ -388,15 +478,15 @@ class DataProvider with ChangeNotifier {
           missionNb = i;
         }
       }
-      await updateRate(missionDiffculty,missionPoints,rate);
+      await updateRate(missionDiffculty, missionPoints, rate);
       await checkbadges(missionNb!);
       notifyListeners();
     } catch (e) {
       rethrow;
     }
   }
-  
-  Future<void> surrendereMission(String id) async{
+
+  Future<void> surrendereMission(String id) async {
     try {
       await dataRepository.updateRow(
         tableId: "missions",
@@ -409,17 +499,17 @@ class DataProvider with ChangeNotifier {
         data: {"rate": 0.0},
       );
       int missionDiffculty = 0;
-      int missionPoints=0;
+      int missionPoints = 0;
       for (int i = 0; i < progress.missions.length; i++) {
         if (progress.missions[i].id == id) {
           print(progress.missions[i].isSurrendered);
           progress.missions[i].isSurrendered = true;
           print(progress.missions[i].isSurrendered);
           missionDiffculty = progress.missions[i].difficulty;
-          missionPoints= progress.missions[i].points;
+          missionPoints = progress.missions[i].points;
         }
       }
-      await updateRate(missionDiffculty, missionPoints,0);
+      await updateRate(missionDiffculty, missionPoints, 0);
       notifyListeners();
     } catch (e) {
       rethrow;
@@ -431,22 +521,23 @@ class DataProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> updateRate(int missionDiffculty, int missionPoints, double S) async {
+  Future<void> updateRate(
+      int missionDiffculty, int missionPoints, double S) async {
     try {
       //Elo Algorthime
       //s= normalized mission rate
       //E = Expected probability
       //2 = is scale you can change
       double E = 1 / (1 + pow(10, ((missionDiffculty - progress.rate) / 4)));
-      double k= 0.3*(1+0.5*(missionDiffculty/10));
-      double s2=S*(1+0.1*(missionPoints/2500));
+      double k = 0.3 * (1 + 0.5 * (missionDiffculty / 10));
+      double s2 = S * (1 + 0.1 * (missionPoints / 2500));
       // Update
-      double newRate = progress.rate + k*(s2 - E);
+      double newRate = progress.rate + k * (s2 - E);
       print(newRate);
-      progress.elo+=((k*(s2 - E))*100).toInt();
-      if(progress.elo<0) progress.elo=0;
-      if(newRate>10) newRate=10;
-      if(newRate<0.0) newRate=0.0;
+      progress.elo += ((k * (s2 - E)) * 100).toInt();
+      if (progress.elo < 0) progress.elo = 0;
+      if (newRate > 10) newRate = 10;
+      if (newRate < 0.0) newRate = 0.0;
       progress.rate = double.parse(newRate.clamp(1, 10).toStringAsFixed(2));
       notifyListeners();
       await dataRepository.updateRow(

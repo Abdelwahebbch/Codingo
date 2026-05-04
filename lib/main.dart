@@ -1,18 +1,21 @@
 import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:pfe_test/services/Auth/auth_provider.dart';
-import 'package:pfe_test/services/Auth/auth_repository.dart';
-import 'package:pfe_test/services/Data/data_provider.dart';
-import 'package:pfe_test/services/Data/data_repository.dart';
-import 'package:pfe_test/services/Data/party_data_provider.dart';
+import 'package:provider/provider.dart';
+
 import 'package:pfe_test/services/appwrite_service.dart';
+
+import 'package:pfe_test/services/Auth/auth_repository.dart';
+
+import 'package:pfe_test/services/Data/data_repository.dart';
+import 'package:pfe_test/services/Data/data_provider.dart';
+import 'package:pfe_test/services/Data/party_data_provider.dart';
+
 import 'package:pfe_test/theme/app_theme.dart';
+
 import 'package:pfe_test/views/auth/login_screen.dart';
 import 'package:pfe_test/views/dashboard/dashboard_screen.dart';
 import 'package:pfe_test/views/onboarding/splash_screen.dart';
-
-import 'package:provider/provider.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -56,6 +59,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final themeManager = Provider.of<ThemeManager>(context, listen: false);
+
     return MaterialApp(
       scrollBehavior: const MaterialScrollBehavior()
           .copyWith(dragDevices: PointerDeviceKind.values.toSet()),
@@ -64,24 +68,25 @@ class MyApp extends StatelessWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: themeManager.themeMode,
-      home: Consumer<AuthProvider>(
-        builder: (context, authProvider, child) {
-          if (authProvider.isLoading) {
-            return const SplashScreen();
-          } else if (authProvider.currentUser != null) {
-            return Consumer<DataProvider>(
-              builder: (context, dataProvider, child) {
-                if (dataProvider.isLoading) {
-                  return const SplashScreen();
-                }
-                return const DashboardScreen();
-              },
-            );
-          } else {
-            return const LoginScreen();
-          }
-        },
-      ),
+      home: const AuthWrapper(),
     );
+  }
+}
+
+class AuthWrapper extends StatelessWidget {
+  const AuthWrapper({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final authProvider = context.watch<AuthProvider>();
+
+    switch (authProvider.status) {
+      case AuthStatus.uninitialized:
+        return const SplashScreen();
+      case AuthStatus.authenticated:
+        return const DashboardScreen();
+      case AuthStatus.unauthenticated:
+        return const LoginScreen();
+    }
   }
 }

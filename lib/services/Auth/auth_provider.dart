@@ -1,28 +1,43 @@
+import 'package:appwrite/appwrite.dart';
 import 'package:flutter/material.dart';
 import 'package:appwrite/models.dart';
 import 'package:pfe_test/models/user_model.dart';
 import 'package:pfe_test/services/Auth/auth_repository.dart';
 
-class AuthProvider with ChangeNotifier {
+class AuthProvider extends ChangeNotifier {
   final AuthRepository authRepository;
   UserModel? _currentUser;
   bool _isLoading = false;
 
   AuthProvider({required this.authRepository});
 
-  UserModel? get currentUser => _currentUser;
+  AuthStatus _status = AuthStatus.uninitialized;
+  AuthStatus get status => _status;
+
   bool get isLoading => _isLoading;
+  UserModel? get currentUser => _currentUser;
 
   Future<void> init() async {
     try {
-    _isLoading = true;
-    notifyListeners();
+      _isLoading = true;
+      notifyListeners();
+
       User? user = await authRepository.currentUser;
       if (user != null) {
         _currentUser = UserModel.fromAppwriteUser(user);
+        _status = AuthStatus.authenticated;
+      } else {
+        _status = AuthStatus.unauthenticated;
+        _currentUser = null;
       }
-    } catch (e) {
-      print('Error initializing AuthProvider: $e');
+    } on AppwriteException catch (e) {
+      if (e.code == 401) {
+        _status = AuthStatus.unauthenticated;
+      } else {
+        print("Erreur Appwrite: ${e.message}");
+        _status = AuthStatus.unauthenticated;
+      }
+      _currentUser = null;
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -34,13 +49,36 @@ class AuthProvider with ChangeNotifier {
       required String password,
       required String name}) async {
     try {
-    _isLoading = true;
-    notifyListeners();
-      User user = await authRepository.signUp(
-          email: email, password: password, name: name);
-      _currentUser = UserModel.fromAppwriteUser(user);
+      _isLoading = true;
+      notifyListeners();
+      await authRepository.signUp(email: email, password: password, name: name);
+      await init();
     } catch (e) {
       print('Error signing up: $e');
+      rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> signIn({required String email, required String password}) async {
+    try {
+      _isLoading = true;
+      notifyListeners();
+      try {
+        await authRepository.signIn(email: email, password: password);
+      } on AppwriteException catch (e) {
+        if (e.type == 'user_session_already_exists') {
+          debugPrint(
+              "Session déjà active détectée. Passage à l'initialisation...");
+        } else {
+          rethrow;
+        }
+      }
+      await init();
+    } catch (e) {
+      debugPrint('Error signing in: $e');
       rethrow;
     } finally {
       _isLoading = false;
@@ -52,10 +90,8 @@ class AuthProvider with ChangeNotifier {
     try {
       _isLoading = true;
       notifyListeners();
-      // account.deleteSession(sessionId: 'current');
       await authRepository.continueWithGoogle();
-      User user = await authRepository.appwriteService.account.get();
-      _currentUser = UserModel.fromAppwriteUser(user);
+      await init();
       // try {
       //   //await createNewRow();
       // } on AppwriteException catch (e) {
@@ -70,21 +106,6 @@ class AuthProvider with ChangeNotifier {
       notifyListeners();
     } catch (e) {
       print("Appwrite Auth Error: ${e}");
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
-
-  Future<void> signIn({required String email, required String password}) async {
-    // await authRepository.appwriteService.account.deleteSession(sessionId: 'current');
-    try {
-    _isLoading = true;
-    notifyListeners();
-      User user = await authRepository.signIn(email: email, password: password);
-      _currentUser = UserModel.fromAppwriteUser(user);
-    } catch (e) {
-      print('Error signing in: $e');
-      rethrow;
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -92,11 +113,12 @@ class AuthProvider with ChangeNotifier {
   }
 
   Future<void> signOut() async {
-    _isLoading = true;
-    notifyListeners();
     try {
+      _isLoading = true;
+      notifyListeners();
       await authRepository.signOut();
       _currentUser = null;
+      _status = AuthStatus.unauthenticated;
     } catch (e) {
       print('Error signing out: $e');
       rethrow;
@@ -105,4 +127,11 @@ class AuthProvider with ChangeNotifier {
       notifyListeners();
     }
   }
+  
+}
+
+enum AuthStatus {
+  uninitialized,
+  authenticated,
+  unauthenticated,
 }
