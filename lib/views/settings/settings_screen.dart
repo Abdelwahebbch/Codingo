@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pfe_test/main.dart';
 import 'package:pfe_test/services/Auth/auth_provider.dart';
 import 'package:pfe_test/services/Data/data_provider.dart';
 import 'package:pfe_test/views/settings/edit_prog_lang_screen.dart';
@@ -135,7 +136,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 if (context.mounted) {
                   Navigator.of(context).pushAndRemoveUntil(
                       MaterialPageRoute(
-                          builder: (context) => const LoginScreen()),
+                          builder: (context) => const AuthWrapper()),
                       (route) => false);
                 }
               },

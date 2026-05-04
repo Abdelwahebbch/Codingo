@@ -17,12 +17,12 @@ class ProgressCard extends StatelessWidget {
       onTap: () {
         try {
           final authservice = Provider.of<AuthProvider>(context, listen: false);
-          final dataservice = Provider.of<DataProvider>(context, listen: false);
+          final dataservice = Provider.of<DataProvider>(context , listen: false);
 
-          if (authservice.currentUser!.id != dataservice.path.userId)
+          if (authservice.currentUser!.id != dataservice.path!.userId)
             Exception("For previous user ");
 
-          final learningPath = dataservice.path;
+          final learningPath = dataservice.path!;
           // LearningPathSampleData.getSamplePythonPath();
 
           Navigator.push(
@@ -42,7 +42,6 @@ class ProgressCard extends StatelessWidget {
                       "Learning path not found ! ",
                       style: TextStyle(fontSize: 12),
                     ),
-                   
                   ));
         }
       },
@@ -83,7 +82,7 @@ class ProgressCard extends StatelessWidget {
                     color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: Text("${user.totalPoints} pts",
+                  child: Text("${user.totalPoints} 💎",
                       style: const TextStyle(
                           color: Colors.white, fontWeight: FontWeight.bold)),
                 ),
