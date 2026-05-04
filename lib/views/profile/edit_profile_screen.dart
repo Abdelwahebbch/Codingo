@@ -59,10 +59,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _userNameController.text = authService.progress.username;
     _emailController.text = authService.progress.email;
     _bioController.text = authService.progress.bio;
-    for (var element in authService.userGoals.values) {
+    for (var element in authService.userGoals!.values) {
       userGoalsValues.add(element.toString());
     }
-    userGoalsKeys = authService.userGoals.keys.toList();
+    userGoalsKeys = authService.userGoals!.keys.toList();
     print(userGoalsValues);
   }
 

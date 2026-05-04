@@ -20,10 +20,10 @@ class _EditProgLangScreenState extends State<EditProgLangScreen> {
     final authService = Provider.of<DataProvider>(context, listen: false);
     selectedLanguage = authService.progress.progLanguage;
     final userGoals=authService.userGoals;
-    if (userGoals["journey"] == "Self-Taught Explorer") {
-      if (userGoals["explorer_objective"] ==
+    if (userGoals?["journey"] == "Self-Taught Explorer") {
+      if (userGoals?["explorer_objective"] ==
           "Build my own apps or websites") {
-        if (userGoals["student_objective_"] ==
+        if (userGoals?["student_objective_"] ==
             "Learn the basics_") {
           items.removeAt(0);
         }
