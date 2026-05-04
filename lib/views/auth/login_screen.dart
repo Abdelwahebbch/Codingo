@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pfe_test/services/Auth/auth_provider.dart';
+import 'package:pfe_test/services/Data/data_provider.dart';
 import 'package:pfe_test/theme/app_theme.dart';
 import 'package:pfe_test/widgets/google_sign_in_button.dart';
 import 'package:provider/provider.dart';
@@ -23,16 +24,7 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _handleLogin() async {
-    try {
-      await Provider.of<AuthProvider>(context, listen: false).signIn(
-        email: _emailController.text,
-        password: _passwordController.text,
-      );
-    } catch (e) {
-      _showErrorDialog(e.toString());
-    }
-  }
+
 
   void _showErrorDialog(String message) {
     showDialog(
@@ -54,7 +46,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final authService = Provider.of<AuthProvider>(context );
+    final authService = Provider.of<AuthProvider>(context);
 
     return SafeArea(
       child: Scaffold(
@@ -109,7 +101,21 @@ class _LoginScreenState extends State<LoginScreen> {
                 authService.isLoading
                     ? const Center(child: CircularProgressIndicator())
                     : ElevatedButton(
-                        onPressed: _handleLogin,
+                        onPressed: () async {
+                          try {
+                            await authService.signIn(
+                              email: _emailController.text,
+                              password: _passwordController.text,
+                            );
+                            if (context.mounted) {
+                              await Provider.of<DataProvider>(context,
+                                      listen: false)
+                                  .reload();
+                            }
+                          } catch (e) {
+                            _showErrorDialog('$e');
+                          }
+                        },
                         child: const Text("LOGIN"),
                       ),
                 const SizedBox(height: 16),
@@ -124,9 +130,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: const Text("Don't have an account? Sign Up"),
                 ),
                 TextButton(
-                  onPressed: () {
-                  
-                  },
+                  onPressed: () {},
                   child: const Text("Forgot Password ?"),
                 ),
                 const SizedBox(
