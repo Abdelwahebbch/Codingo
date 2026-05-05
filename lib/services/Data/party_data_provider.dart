@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:appwrite/appwrite.dart';
 import 'package:flutter/material.dart' hide Row;
 import 'package:pfe_test/models/party_model.dart';
@@ -6,25 +8,25 @@ import 'package:pfe_test/services/Auth/auth_provider.dart';
 import 'package:pfe_test/services/Data/data_repository.dart';
 import 'package:pfe_test/services/appwrite_service.dart';
 
-
 class PartyDataProvider with ChangeNotifier {
   final DataRepository dataRepository;
   final AuthProvider authProvider;
-  final AppwriteService appwriteService ;
+  final AppwriteService appwriteService;
   bool _isLoading = false;
 
-   UserInfo progress;
+  UserInfo progress;
   late Party party;
 
   late PartyMember partyMember;
 
   late Map<String, dynamic> userGoals;
-  PartyDataProvider({required this.appwriteService ,  required this.dataRepository, required this.authProvider , required this.progress});
-
+  PartyDataProvider(
+      {required this.appwriteService,
+      required this.dataRepository,
+      required this.authProvider,
+      required this.progress});
 
   bool get isLoading => _isLoading;
-
-
 
   Future<String> checkExistingParty() async {
     var row = await dataRepository.getRows(
@@ -89,6 +91,7 @@ class PartyDataProvider with ChangeNotifier {
       rethrow;
     }
   }
+
   void toggleReadyLocaly(int memberIndex, bool isReady) {
     party.members[memberIndex].isReady = isReady;
     if (party.members[memberIndex].userId == authProvider.currentUser!.id) {
@@ -96,6 +99,7 @@ class PartyDataProvider with ChangeNotifier {
     }
     notifyListeners();
   }
+
   Future<void> checkExistingPartyMember() async {
     try {
       await dataRepository.getRow(
@@ -435,19 +439,37 @@ class PartyDataProvider with ChangeNotifier {
 
   Future<void> savePartyHistory(List<PartyMember> rankedMembers) async {
     List<String> jsonMembers = [];
+    // ignore: non_constant_identifier_names
+    List<String> Members = [];
     for (int i = 0; i < rankedMembers.length; i++) {
-      jsonMembers.add(rankedMembers[i].toJson());
+      jsonMembers.add(jsonEncode({
+        "userId": rankedMembers[i].userId,
+        "username": rankedMembers[i].username,
+        "imageId": rankedMembers[i].imageId,
+        "score": rankedMembers[i].score,
+        "correctAnswers": rankedMembers[i].correctAnswers,
+        "totalAnswers": rankedMembers[i].totalAnswers,
+        "isReady": rankedMembers[i].isReady,
+        "joinedAt": rankedMembers[i].joinedAt.toIso8601String(),
+        "isSubmit": rankedMembers[i].isSubmit,
+      }));
     }
+    for (int i = 0; i < rankedMembers.length; i++) {
+      Members.add(rankedMembers[i].userId);
+    }
+
     await dataRepository.createRow(
       tableId: "party_history",
       // kenet ID.unique
       rowId: ID.unique(),
       data: {
+        "hoster_id": party.hostId,
         "partyId": party.partyId,
         "partyName": party.partyName,
         "partyMembers": jsonMembers,
         "startedAt": party.startedAt.toString(),
         "completedAt": party.endedAt.toString(),
+        "membersId": Members
       },
     );
   }
@@ -481,8 +503,8 @@ class PartyDataProvider with ChangeNotifier {
 
   Future<void> GotToExisteParty(String partyIdDb) async {
     try {
-      final partyRow = await dataRepository.getRow(
-           tableId: "party", rowId: partyIdDb);
+      final partyRow =
+          await dataRepository.getRow(tableId: "party", rowId: partyIdDb);
       final membersResult = await dataRepository.getRows(
         tableId: "party_member",
         queries: [
@@ -511,7 +533,8 @@ class PartyDataProvider with ChangeNotifier {
           totalAnswers: 0,
           isReady: false,
           isSubmit: false);
-      final m = await dataRepository.getRow( tableId: "party_member", rowId: authProvider.currentUser!.id);
+      final m = await dataRepository.getRow(
+          tableId: "party_member", rowId: authProvider.currentUser!.id);
       partyMember = PartyMember(
           userId: m.data["userId"],
           username: m.data["username"],
