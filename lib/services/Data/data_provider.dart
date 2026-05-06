@@ -69,12 +69,15 @@ class DataProvider extends ChangeNotifier {
 
   void updateIsFirstLogin() async {
     if (isFirstLogin) {
+      
+        
       try {
         // On CRÉE le document en base de données puisqu'il n'existe pas encore
         await dataRepository.createRow(
           tableId: "user_profiles",
           rowId: authProvider.currentUser!.id,
           data: {
+            'username':authProvider.currentUser!.name,
             'isFirstLogin': false,
             'progLanguage': progress.progLanguage,
             'experience': progress.experience,
