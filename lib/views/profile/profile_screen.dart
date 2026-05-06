@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:pfe_test/services/Auth/auth_provider.dart';
 import 'package:pfe_test/services/Data/data_provider.dart';
 import 'package:pfe_test/theme/app_theme.dart';
-import 'package:pfe_test/views/auth/login_screen.dart';
+import 'package:pfe_test/widgets/rank_widget.dart';
 import 'package:provider/provider.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -37,33 +37,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final user = authService.authProvider.currentUser;
     final String userImage = authService.progress.imageId;
 
-    List<String> elos = [
-      "Iron 1",
-      "Iron 2",
-      "Iron 3",
-      "Bronze 1",
-      "Bronze 2",
-      "Bronze 3",
-      "Silver 1",
-      "Silver 2",
-      "Silver 3",
-      "Gold 1",
-      "Gold 2",
-      "Gold 3",
-      "Diamond 1",
-      "Diamond 2",
-      "Diamond 3",
-      "Ascendant 1",
-      "Ascendant 2",
-      "Ascendant 3",
-      "Immortal 1",
-      "Immortal 2",
-      "Immortal 3",
-      "Radiant"
-    ];
-    int elo = authService.progress.elo;
-    int index = (elo < 2200) ? (authService.progress.elo) ~/ 100 : 22;
-    String image = "assets/icon/${index}.png";
     NetworkImage dataBaseImage = NetworkImage(
         'https://fra.cloud.appwrite.io/v1/storage/buckets/69891b1d0012c9a7e862/files/$userImage/view?project=697295e70021593c3438&mode=admin');
     if (!isReady) {
@@ -130,54 +103,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const SizedBox(height: 32),
               _buildSectionTitle(context, "Elo Rank"),
               const SizedBox(height: 16),
-              Center(
-                  child: Image.asset(
-                image,
-                height: 100,
-              )),
-              Center(
-                  child: Text(
-                elos[index - 1],
-                style: const TextStyle(fontSize: 30, color: Colors.white),
-              )),
-              const SizedBox(
-                height: 20,
+              RankWidget(
+                elo: authService.progress.elo,
+                rank: rank, showBar: true, height: 100, width: 100,
+                
               ),
-              if (index < 22)
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: LinearProgressIndicator(
-                    value: (elo % 100) / 100,
-                    backgroundColor: Colors.white.withValues(alpha: 0.2),
-                    valueColor:
-                        const AlwaysStoppedAnimation<Color>(Colors.white),
-                    minHeight: 10,
-                  ),
-                ),
-              if (index < 22)
-                Padding(
-                  padding: const EdgeInsets.only(left: 10.0, right: 10, top: 5),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        "Elo Progress",
-                        style: TextStyle(color: Colors.white),
-                      ),
-                      Text("${elo % 100}/100",
-                          style: const TextStyle(color: Colors.white)),
-                    ],
-                  ),
-                ),
-                if(index>21)
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                         
-                          Text("Top #$rank",
-                              style: const TextStyle(color: Colors.white , fontSize: 30)),
-                        ],
-                      )
             ],
           ),
         ),

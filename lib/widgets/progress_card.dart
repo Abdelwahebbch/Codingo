@@ -3,6 +3,7 @@ import 'package:pfe_test/models/user_info_model.dart';
 import 'package:pfe_test/services/Auth/auth_provider.dart';
 import 'package:pfe_test/services/Data/data_provider.dart';
 import 'package:pfe_test/views/learning_path/learning_path_screen.dart';
+import 'package:pfe_test/widgets/rank_widget.dart';
 import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
 
@@ -13,14 +14,14 @@ class ProgressCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final authservice = Provider.of<AuthProvider>(context, listen: false);
+    final dataservice = Provider.of<DataProvider>(context, listen: false);
     return GestureDetector(
       onTap: () {
         try {
-          final authservice = Provider.of<AuthProvider>(context, listen: false);
-          final dataservice = Provider.of<DataProvider>(context , listen: false);
-
-          if (authservice.currentUser!.id != dataservice.path!.userId)
+          if (authservice.currentUser!.id != dataservice.path!.userId) {
             Exception("For previous user ");
+          }
 
           final learningPath = dataservice.path!;
           // LearningPathSampleData.getSamplePythonPath();
@@ -59,6 +60,7 @@ class ProgressCard extends StatelessWidget {
           ],
         ),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -75,20 +77,31 @@ class ProgressCard extends StatelessWidget {
                             fontWeight: FontWeight.bold)),
                   ],
                 ),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text("${user.totalPoints} 💎",
-                      style: const TextStyle(
-                          color: Colors.white, fontWeight: FontWeight.bold)),
+                Column(
+                  children: [
+                    RankWidget(
+                        elo: dataservice.progress.elo,
+                        rank: dataservice.progress.rank,
+                        showBar: false,
+                        height: 50,
+                        width: 50),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text("${user.totalPoints} 💎",
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold)),
+                    ),
+                  ],
                 ),
               ],
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 10),
             ClipRRect(
               borderRadius: BorderRadius.circular(10),
               child: LinearProgressIndicator(
