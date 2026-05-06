@@ -9,6 +9,7 @@ import 'package:pfe_test/views/profile/profile_screen.dart';
 import 'package:pfe_test/views/settings/settings_screen.dart';
 import 'package:pfe_test/widgets/mission_tile.dart';
 import 'package:pfe_test/widgets/progress_card.dart';
+import 'package:pfe_test/widgets/rank_widget.dart';
 import 'package:provider/provider.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -47,7 +48,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final List<Widget> screens = [
       const DashboardHome(),
       PartyHomeScreen(
-        username: Provider.of<AuthProvider>(context).currentUser!.name.split(' ').first,
+        username: Provider.of<AuthProvider>(context)
+            .currentUser!
+            .name
+            .split(' ')
+            .first,
       ),
       const BadgesScreen(),
       const SettingsScreen(),
@@ -97,61 +102,62 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final overlay = Overlay.of(context);
     List<Map<String, dynamic>> allBadges = [
       {
-      'name': 'Bug Hunter',
-      'desc': 'Fix 10 debugging missions',
-      'icon': Icons.bug_report,
-      'color': Colors.green,
-      'unlocked': false
-    },
-    {
-      'name': 'Code Ninja',
-      'desc': 'Complete 10 missions without hints',
-      'icon': Icons.bolt,
-      'color': Colors.orange,
-      'unlocked': false
-    },
-    {
-      'name': 'Test Master',
-      'desc': 'Write 20 unit tests',
-      'icon': Icons.verified,
-      'color': Colors.blue,
-      'unlocked': false
-    },
-    {
-      'name': 'Fast Learner',
-      'desc': 'Complete 5 missions in one day',
-      'icon': Icons.speed,
-      'color': Colors.purple,
-      'unlocked': false
-    },
-    {
-      'name': 'Architect',
-      'desc': 'Complete 10 ordering tasks',
-      'icon': Icons.architecture,
-      'color': Colors.red,
-      'unlocked': false
-    },
-    {
-      'name': 'Clean Coder',
-      'desc': 'complete 10 missions with fewer than 30 failures.',
-      'icon': Icons.cleaning_services,
-      'color': Colors.teal,
-      'unlocked': false
-    },
-    {
-      'name': 'Team Player',
-      'desc': 'Complete at least 10 single-choice and 10 multiple-choice challenges',
-      'icon': Icons.groups,
-      'color': Colors.indigo,
-      'unlocked': false
-    },
-    {
-      'name': 'AI Whisperer',
-      'desc': 'Ask 50 insightful questions',
-      'icon': Icons.psychology,
-      'color': Colors.pink,
-      'unlocked': false
-    },
+        'name': 'Bug Hunter',
+        'desc': 'Fix 10 debugging missions',
+        'icon': Icons.bug_report,
+        'color': Colors.green,
+        'unlocked': false
+      },
+      {
+        'name': 'Code Ninja',
+        'desc': 'Complete 10 missions without hints',
+        'icon': Icons.bolt,
+        'color': Colors.orange,
+        'unlocked': false
+      },
+      {
+        'name': 'Test Master',
+        'desc': 'Write 20 unit tests',
+        'icon': Icons.verified,
+        'color': Colors.blue,
+        'unlocked': false
+      },
+      {
+        'name': 'Fast Learner',
+        'desc': 'Complete 5 missions in one day',
+        'icon': Icons.speed,
+        'color': Colors.purple,
+        'unlocked': false
+      },
+      {
+        'name': 'Architect',
+        'desc': 'Complete 10 ordering tasks',
+        'icon': Icons.architecture,
+        'color': Colors.red,
+        'unlocked': false
+      },
+      {
+        'name': 'Clean Coder',
+        'desc': 'complete 10 missions with fewer than 30 failures.',
+        'icon': Icons.cleaning_services,
+        'color': Colors.teal,
+        'unlocked': false
+      },
+      {
+        'name': 'Team Player',
+        'desc':
+            'Complete at least 10 single-choice and 10 multiple-choice challenges',
+        'icon': Icons.groups,
+        'color': Colors.indigo,
+        'unlocked': false
+      },
+      {
+        'name': 'AI Whisperer',
+        'desc': 'Ask 50 insightful questions',
+        'icon': Icons.psychology,
+        'color': Colors.pink,
+        'unlocked': false
+      },
     ];
     Map<String, dynamic> badge = {};
     for (int i = 0; i < allBadges.length; i++) {
@@ -305,12 +311,18 @@ class DashboardHomeState extends State<DashboardHome> {
                               Text("Welcome back,",
                                   style:
                                       Theme.of(context).textTheme.bodyMedium),
-                              Text( Provider.of<AuthProvider>(context).currentUser!.name.split(' ').first,
+                              Text(
+                                  Provider.of<AuthProvider>(context)
+                                      .currentUser!
+                                      .name
+                                      .split(' ')
+                                      .first,
                                   style: Theme.of(context)
                                       .textTheme
                                       .headlineMedium),
                             ],
                           ),
+                        
                           GestureDetector(
                             onTap: () {
                               Navigator.push(
@@ -343,7 +355,7 @@ class DashboardHomeState extends State<DashboardHome> {
                   ),
                 ),
               ),
-         checkMissionsAv()
+              checkMissionsAv()
             ],
           ),
         ),
