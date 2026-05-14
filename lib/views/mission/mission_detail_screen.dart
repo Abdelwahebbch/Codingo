@@ -270,9 +270,11 @@ class _MissionDetailScreenState extends State<MissionDetailScreen> {
   double getRate() {
     final authService = Provider.of<DataProvider>(context, listen: false);
     double rate = 1 -
-        (((widget.mission.aiPointsUsed / (authService.progress.totalPoints+1)) *
+        (((widget.mission.aiPointsUsed /
+                    (authService.progress.totalPoints + 1)) *
                 0.2) +
-            ((widget.mission.nbFailed / (authService.progress.totalFailures+1)) *
+            ((widget.mission.nbFailed /
+                    (authService.progress.totalFailures + 1)) *
                 0.1));
     if (rate < 0.0) {
       return 0.0;
@@ -290,33 +292,23 @@ class _MissionDetailScreenState extends State<MissionDetailScreen> {
       case MissionType.complete:
         showDialog(
           context: context,
-          barrierDismissible: false,
-          builder: (context) {
-            return Center(
-                child: Container(
-              width: 150,
-              height: 150,
-              decoration: BoxDecoration(
-                color: AppTheme.secondaryColor,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Column(
+          builder: (context) => const AlertDialog(
+            content: SizedBox(
+              width: 10,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Padding(
-                    padding: EdgeInsets.only(top: 40, left: 50, right: 50),
-                    child: CircularProgressIndicator(),
-                  ),
-                  SizedBox(
-                    height: 15,
-                  ),
+                  CircularProgressIndicator(),
+                  SizedBox(height: 20),
                   Text(
                     "Checking...",
-                    style: TextStyle(fontSize: 13, color: Colors.white),
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 13),
                   ),
                 ],
               ),
-            ));
-          },
+            ),
+          ),
         );
         final List<dynamic> check =
             await AppwritecloudfunctionsService.checkAnwser(
@@ -352,10 +344,39 @@ class _MissionDetailScreenState extends State<MissionDetailScreen> {
         }
         break;
       case MissionType.test:
-        isCorrect = _currentAnswer
-            .toString()
-            .contains(widget.mission.solution.toString());
-        rate = getRate();
+        if (widget.mission.solution == null) {
+          showDialog(
+            context: context,
+            builder: (context) => const AlertDialog(
+              content: SizedBox(
+                width: 10,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CircularProgressIndicator(),
+                    SizedBox(height: 20),
+                    Text(
+                      "Checking...",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 13),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+          final List<dynamic> check =
+              await AppwritecloudfunctionsService.checkAnwser(
+                  authService.progress, widget.mission, _currentAnswer);
+          if (!mounted) return;
+          Navigator.pop(context);
+          isCorrect = check[0];
+          rate = getRate();
+        } else {
+          isCorrect = _currentAnswer.toString().contains(
+              widget.mission.solution.toString().replaceAll('\n', ' '));
+          rate = getRate();
+        }
         break;
     }
 
