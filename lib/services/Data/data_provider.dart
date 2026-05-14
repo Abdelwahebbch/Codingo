@@ -7,6 +7,7 @@ import 'package:pfe_test/models/learning_path_model.dart';
 import 'package:pfe_test/models/mission_model.dart';
 import 'package:pfe_test/models/user_info_model.dart';
 import 'package:pfe_test/services/Auth/auth_provider.dart';
+import 'package:pfe_test/services/CloudFunctions/appwrite_cloud_functions_service.dart';
 import 'package:pfe_test/services/Data/data_repository.dart';
 
 class DataProvider extends ChangeNotifier {
@@ -42,7 +43,7 @@ class DataProvider extends ChangeNotifier {
     totalAIQuestions: 0,
     elo: 0,
   );
-  bool isFirstLogin = true;
+  bool isFirstLogin = false;
   LearningPath? path;
   Map<String, dynamic>? userGoals;
   bool get isLoading => _isLoading;
@@ -69,15 +70,13 @@ class DataProvider extends ChangeNotifier {
 
   void updateIsFirstLogin() async {
     if (isFirstLogin) {
-      
-        
       try {
         // On CRÉE le document en base de données puisqu'il n'existe pas encore
         await dataRepository.createRow(
           tableId: "user_profiles",
           rowId: authProvider.currentUser!.id,
           data: {
-            'username':authProvider.currentUser!.name,
+            'username': authProvider.currentUser!.name,
             'isFirstLogin': false,
             'progLanguage': progress.progLanguage,
             'experience': progress.experience,
@@ -174,11 +173,12 @@ class DataProvider extends ChangeNotifier {
       } on AppwriteException catch (e) {
         if (e.code == 404) {
           print("Profile not founnd ");
+
           isFirstLogin = true;
           progress = UserInfo(
             progLanguage: "not selected",
             username: authProvider.currentUser!.name,
-            experience: 0,
+            experience: 500,
             totalPoints: 0,
             earnedBadges: [],
             bio: "",
@@ -202,6 +202,32 @@ class DataProvider extends ChangeNotifier {
             totalAIQuestions: 0,
             elo: 0,
           );
+          await dataRepository.createRow(
+              rowId: authProvider.currentUser!.id,
+              tableId: 'user_profiles',
+              data: {
+                "progLanguage": "not selected",
+                "username": authProvider.currentUser!.name,
+                "experience": 500,
+                "totalPoints": 0,
+                "earnedBadges": [],
+                "bio": "",
+                "imageId": "",
+                "difficulty": "Intermediate",
+                "nbMission": 0,
+                "badgesProgress": jsonEncode({
+                  'debug': 0,
+                  'complete': 0,
+                  'multipleChoice': 0,
+                  'ordering': 0,
+                  'singleChoice': 0,
+                  'test': 0
+                }),
+                "nbMissionCompletedWithoutHints": 0,
+                "totalFailures": 0,
+                "totalAIQuestions": 0,
+                "elo": 0,
+              });
           notifyListeners();
           return;
         } else {
@@ -242,12 +268,23 @@ class DataProvider extends ChangeNotifier {
         path = await getLearningPath();
       } on AppwriteException catch (e) {
         if (e.code == 404) {
-          print("learning Path not found");
+          try {
+            dataRepository.getRow(
+                tableId: 'user_goals', rowId: authProvider.currentUser!.id);
+            await AppwritecloudfunctionsService.createLearningPath(
+                id: authProvider.currentUser!.id, progLang: 'Html', desc: '');
+          } on AppwriteException catch (e) {
+            if (e.code == 404) {
+              isFirstLogin = true;
+            }
+            print("user_goals not found go to onBoarding");
+          }
         } else {
           rethrow;
         }
+      } finally {
+        notifyListeners();
       }
-      notifyListeners();
     } catch (e) {
       debugPrint("Error fi getUserInfo $e");
       rethrow;
