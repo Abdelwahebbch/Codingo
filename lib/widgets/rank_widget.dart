@@ -46,6 +46,7 @@ class RankWidget extends StatelessWidget {
     ];
 
     int index = (elo < 2200) ? (elo) ~/ 100 : 22;
+    index = (index<1)? 1 : index ; 
     String image = "assets/icon/$index.png";
     return Column(
       mainAxisSize: MainAxisSize.min,
