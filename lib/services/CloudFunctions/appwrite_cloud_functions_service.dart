@@ -50,17 +50,13 @@ class AppwritecloudfunctionsService extends ChangeNotifier {
         } else {
           debugPrint("Another exception");
         }
-          x++;
+        x++;
       } catch (e) {
         debugPrint("Error when create learning path $e");
         rethrow;
       }
     }
   }
-
-  // static Future<void> loadLearningPath() {
-  //   try {} catch (e) {}
-  // }
 
   static Future<List<dynamic>> checkAnwser(
       UserInfo user, Mission mission, String solution) async {
@@ -114,6 +110,29 @@ class AppwritecloudfunctionsService extends ChangeNotifier {
       //return data;
     } catch (e) {
       print("Error");
+      rethrow;
+    }
+  }
+
+  static Future<void> requestForConceptsMissions(
+      String id, String concept) async {
+    try {
+      final res = await http.post(
+          Uri.parse('https://69ce45470028a158ac46.fra.appwrite.run/'),
+          body: jsonEncode({
+            "userId": id,
+            "desc": concept,
+          }));
+
+      // List<dynamic> data = [];
+      final  decoded = jsonDecode(res.body);
+      //final String responseString = decoded["response"];
+      //data = jsonDecode(responseString);
+      print(decoded);
+
+      //return data;
+    } catch (e) {
+      print("Error in requestForConceptsMissions");
       rethrow;
     }
   }
