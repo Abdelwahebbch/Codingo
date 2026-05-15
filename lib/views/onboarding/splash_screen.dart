@@ -48,15 +48,11 @@ class _SplashScreenState extends State<SplashScreen>
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                  Image(
-                  height: 170,
-                  width: 170,
+                
                   image: AssetImage('assets/icon/icon.png'),
                 ),
                 SizedBox(height: 8),
-                Text(
-                  "Master Software Engineering",
-                  style: TextStyle(color: Colors.grey, letterSpacing: 1.2),
-                ),
+              
                 SizedBox(height: 48),
                 CircularProgressIndicator(
                   valueColor:

@@ -32,7 +32,8 @@ class _PartyHomeScreenState extends State<PartyHomeScreen> {
             padding: const EdgeInsets.all(20.0),
             child: SingleChildScrollView(
                 child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
+                
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // Header
                 const SizedBox(height: 20),
@@ -51,11 +52,9 @@ class _PartyHomeScreenState extends State<PartyHomeScreen> {
                       ),
                 ),
                 const SizedBox(height: 40),
-
-                // Main Options
-
                 Column(
                   mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     // Create Party Card
                     GestureDetector(
@@ -128,7 +127,7 @@ class _PartyHomeScreenState extends State<PartyHomeScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 30),
+                    const SizedBox(height: 50),
 
                     // Join Party Card
                     GestureDetector(
@@ -205,30 +204,7 @@ class _PartyHomeScreenState extends State<PartyHomeScreen> {
                 const SizedBox(
                   height: 20,
                 ),
-                // Info Section
-                Container(
-                  decoration: BoxDecoration(
-                    color: AppTheme.cardColor,
-                    borderRadius: BorderRadius.circular(15),
-                    border: Border.all(
-                      color: AppTheme.primaryColor.withValues(alpha: 0.2),
-                    ),
-                  ),
-                  padding: const EdgeInsets.all(15),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.info_outline,
-                        color: AppTheme.primaryColor,
-                      ),
-                      const SizedBox(width: 12),
-                      Text(
-                        'Compete with friends, earn XP together, \nand climb the party leaderboard!',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ],
-                  ),
-                ),
+              
 
                 const SizedBox(height: 20),
               ],

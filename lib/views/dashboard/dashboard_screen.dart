@@ -9,7 +9,6 @@ import 'package:pfe_test/views/profile/profile_screen.dart';
 import 'package:pfe_test/views/settings/settings_screen.dart';
 import 'package:pfe_test/widgets/mission_tile.dart';
 import 'package:pfe_test/widgets/progress_card.dart';
-import 'package:pfe_test/widgets/rank_widget.dart';
 import 'package:provider/provider.dart';
 
 class DashboardScreen extends StatefulWidget {

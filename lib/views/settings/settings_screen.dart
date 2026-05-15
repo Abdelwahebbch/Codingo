@@ -5,7 +5,6 @@ import 'package:pfe_test/services/Data/data_provider.dart';
 import 'package:pfe_test/views/settings/edit_prog_lang_screen.dart';
 import 'package:provider/provider.dart';
 import '../../theme/app_theme.dart';
-import '../auth/login_screen.dart';
 import '../profile/edit_profile_screen.dart';
 import 'support_screens.dart';
 
