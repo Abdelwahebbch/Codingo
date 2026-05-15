@@ -24,8 +24,6 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-
-
   void _showErrorDialog(String message) {
     showDialog(
       context: context,
@@ -59,16 +57,13 @@ class _LoginScreenState extends State<LoginScreen> {
               children: [
                 const SizedBox(height: 80),
                 const Image(
-                  height: 170,
-                  width: 170,
-                  image: AssetImage('assets/icon/icon.png'),
+                  height: 150,
+                  width: 150,
+                  image: AssetImage('assets/icon/logo.png'),
                 ),
-                const Text(
-                  "Master Software Engineering",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.grey),
+                const SizedBox(
+                  height: 50,
                 ),
-                const SizedBox(height: 48),
                 TextField(
                   controller: _emailController,
                   decoration: InputDecoration(
