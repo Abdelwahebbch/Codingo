@@ -92,7 +92,7 @@ class _FeedbackBoxState extends State<FeedbackBox> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
           content:
-              Text("Feedback sent! Thanks for helping CodeQuest grow <3 ")),
+              Text("Feedback sent! Thanks for helping Codingo grow <3 ")),
     );
   }
 
