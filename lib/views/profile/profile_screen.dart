@@ -33,8 +33,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final authService = Provider.of<DataProvider>(context);
-    final themeManager = Provider.of<ThemeManager>(context);
-    final isDark = themeManager.themeMode == ThemeMode.dark;
+    
     final auth = Provider.of<AuthProvider>(context);
     final user = authService.authProvider.currentUser;
     final String userImage = authService.progress.imageId;
