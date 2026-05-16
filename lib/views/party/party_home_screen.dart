@@ -37,19 +37,23 @@ class _PartyHomeScreenState extends State<PartyHomeScreen> {
               children: [
                 // Header
                 const SizedBox(height: 20),
-                Text(
-                  'Party Mode',
-                  style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.primaryColor,
-                      ),
+                Center(
+                  child: Text(
+                    'Party Mode',
+                    style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.primaryColor,
+                        ),
+                  ),
                 ),
                 const SizedBox(height: 8),
-                Text(
-                  'Play quiz and missions with your friends!',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.grey[600],
-                      ),
+                Center(
+                  child: Text(
+                    'Play quiz and missions with your friends!',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Colors.grey[600],
+                        ),
+                  ),
                 ),
                 const SizedBox(height: 40),
                 Column(
