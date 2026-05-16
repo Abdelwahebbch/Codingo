@@ -38,6 +38,9 @@ class _MissionDetailScreenState extends State<MissionDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final themeManager = Provider.of<ThemeManager>(context);
+
+    final isDark = themeManager.themeMode == ThemeMode.dark;
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(
@@ -59,7 +62,7 @@ class _MissionDetailScreenState extends State<MissionDetailScreen> {
             child: Container(
               width: double.infinity,
               padding: const EdgeInsets.all(16),
-              color: AppTheme.cardColor,
+              color: isDark ? AppTheme.cardColor : const Color(0xFFF5F6FA),
               child: Column(
                 children: [
                   Row(
@@ -79,7 +82,14 @@ class _MissionDetailScreenState extends State<MissionDetailScreen> {
                               context: context,
                               barrierDismissible: false,
                               builder: (context) => AlertDialog(
-                                title: const Center(child: Text("Warning !")),
+                                title: Center(
+                                    child: Text(
+                                  "Warning !",
+                                  style: TextStyle(
+                                      color: isDark
+                                          ? Colors.white
+                                          : Colors.black87),
+                                )),
                                 content: const Text(
                                     "Are you sure you want to surrender?"),
                                 actions: [
@@ -124,7 +134,7 @@ class _MissionDetailScreenState extends State<MissionDetailScreen> {
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
-              child: _buildChallengeInterface(),
+              child: _buildChallengeInterface(context),
             ),
           ),
           SliverToBoxAdapter(
@@ -161,7 +171,10 @@ class _MissionDetailScreenState extends State<MissionDetailScreen> {
     );
   }
 
-  Widget _buildChallengeInterface() {
+  Widget _buildChallengeInterface(context) {
+    final themeManager = Provider.of<ThemeManager>(context);
+
+    final isDark = themeManager.themeMode == ThemeMode.dark;
     switch (widget.mission.type) {
       case MissionType.debug:
       case MissionType.complete:
@@ -173,7 +186,14 @@ class _MissionDetailScreenState extends State<MissionDetailScreen> {
             border: Border.all(color: Colors.grey.shade800),
           ),
           child: SingleChildScrollView(
-              child: CodeField(minLines: 20, controller: _codeController)),
+              child: CodeField(
+            minLines: 20,
+            controller: _codeController,
+            textStyle: TextStyle(color: isDark ? Colors.white : Colors.black87,),
+            decoration: BoxDecoration(
+              color: isDark ?   AppTheme.secondaryColor : Colors.white,
+            ),
+        )),
         );
       case MissionType.test:
         return Column(
@@ -196,7 +216,10 @@ class _MissionDetailScreenState extends State<MissionDetailScreen> {
                 border: Border.all(color: Colors.grey.shade800),
               ),
               child: SingleChildScrollView(
-                  child: CodeField(minLines: 20, controller: _codeController)),
+                  child: CodeField(minLines: 20, controller: _codeController,textStyle: TextStyle(color: isDark ? Colors.white : Colors.black87,),
+            decoration: BoxDecoration(
+              color: isDark ?   AppTheme.secondaryColor : Colors.white,
+            ),)),
             ),
             const SizedBox(height: 8),
             const Text(

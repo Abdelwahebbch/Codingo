@@ -191,6 +191,8 @@ class _PartyLobbyScreenState extends State<PartyLobbyScreen> {
   Widget build(BuildContext context) {
     final authService = Provider.of<PartyDataProvider>(context, listen: false);
     _isReady = authService.partyMember.isReady;
+    final themeManager = Provider.of<ThemeManager>(context,listen: true);
+    final isDark = themeManager.themeMode == ThemeMode.dark;
     return SafeArea(
       child: PopScope(
         canPop: false,
@@ -250,8 +252,7 @@ class _PartyLobbyScreenState extends State<PartyLobbyScreen> {
                                 .textTheme
                                 .titleLarge
                                 ?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,color:  Colors.white ,
                                 ),
                           ),
 
@@ -290,7 +291,7 @@ class _PartyLobbyScreenState extends State<PartyLobbyScreen> {
                       _party.partyName,
                       style:
                           Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                fontWeight: FontWeight.bold,
+                                fontWeight: FontWeight.bold,color: isDark ? Colors.white : Colors.black87,
                               ),
                     ),
                     const SizedBox(height: 8),
@@ -304,7 +305,9 @@ class _PartyLobbyScreenState extends State<PartyLobbyScreen> {
                         const SizedBox(width: 5),
                         Text(
                           'Host: ${_party.hostName}',
-                          style: Theme.of(context).textTheme.bodySmall,
+                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                fontSize: 10,color: isDark ? Colors.white : Colors.black87,
+                              ),
                         ),
                       ],
                     ),
@@ -345,7 +348,7 @@ class _PartyLobbyScreenState extends State<PartyLobbyScreen> {
                         'Players (${_party.memberCount}/${_party.maxMembers})',
                         style:
                             Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
+                                  fontWeight: FontWeight.bold,color: isDark ? Colors.white : Colors.black87,
                                 ),
                       ),
                       const SizedBox(height: 15),

@@ -58,7 +58,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final themeManager = Provider.of<ThemeManager>(context, listen: false);
+    final themeManager = Provider.of<ThemeManager>(context, listen: true);
 
     return MaterialApp(
       scrollBehavior: const MaterialScrollBehavior()

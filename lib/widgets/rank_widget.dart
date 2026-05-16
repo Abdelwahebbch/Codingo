@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:pfe_test/theme/app_theme.dart';
+import 'package:provider/provider.dart';
 
 class RankWidget extends StatelessWidget {
   const RankWidget({
@@ -20,6 +22,9 @@ class RankWidget extends StatelessWidget {
   Widget build(
     BuildContext context,
   ) {
+    final themeManager = Provider.of<ThemeManager>(context);
+
+    final isDark = themeManager.themeMode == ThemeMode.dark;
     List<String> elos = [
       "Iron 1",
       "Iron 2",
@@ -60,7 +65,7 @@ class RankWidget extends StatelessWidget {
           Center(
               child: Text(
             elos[index - 1],
-            style: const TextStyle(fontSize: 30, color: Colors.white),
+            style: TextStyle(fontSize: 30, color: isDark ? Colors.white : Colors.black87),
           )),
           if(showBar)
         const SizedBox(
@@ -71,8 +76,8 @@ class RankWidget extends StatelessWidget {
             borderRadius: BorderRadius.circular(10),
             child: LinearProgressIndicator(
               value: (elo % 100) / 100,
-              backgroundColor: Colors.white.withValues(alpha: 0.2),
-              valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+              backgroundColor: isDark ?Colors.white.withValues(alpha: 0.2) :const Color.fromARGB(255, 168, 168, 168),
+              valueColor:  AlwaysStoppedAnimation<Color>(isDark ? Colors.white : Colors.black87),
               minHeight: 10,
             ),
           ),
@@ -82,12 +87,12 @@ class RankWidget extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
+                 Text(
                   "Elo Progress",
-                  style: TextStyle(color: Colors.white),
+                  style: TextStyle(color: isDark ? Colors.white : Colors.black87),
                 ),
                 Text("${elo % 100}/100",
-                    style: const TextStyle(color: Colors.white)),
+                    style:  TextStyle(color: isDark ? Colors.white : Colors.black87)),
               ],
             ),
           ),

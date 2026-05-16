@@ -161,6 +161,8 @@ class _PartyCreateScreenState extends State<PartyCreateScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final themeManager = Provider.of<ThemeManager>(context,listen: true);
+    final isDark = themeManager.themeMode == ThemeMode.dark;
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(
@@ -177,11 +179,14 @@ class _PartyCreateScreenState extends State<PartyCreateScreen> {
                 Text(
                   'Party Name',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.bold,color: isDark ? Colors.white : Colors.black87,
                       ),
                 ),
                 const SizedBox(height: 10),
                 TextField(
+                  style: TextStyle(
+                    color: isDark ? Colors.white : Colors.black87,
+                  ),
                   controller: _partyNameController,
                   decoration: InputDecoration(
                     hintText: 'Enter party name',
@@ -190,7 +195,8 @@ class _PartyCreateScreenState extends State<PartyCreateScreen> {
                     ),
                     prefixIcon: const Icon(Icons.group),
                     filled: true,
-                    fillColor: AppTheme.cardColor,
+                    fillColor: isDark ? AppTheme.cardColor :Colors.white,
+                    
                   ),
                 ),
                 const SizedBox(height: 30),
@@ -200,6 +206,7 @@ class _PartyCreateScreenState extends State<PartyCreateScreen> {
                   'Maximum Members: $_maxMembers',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : Colors.black87,
                       ),
                 ),
                 const SizedBox(height: 10),
@@ -220,6 +227,7 @@ class _PartyCreateScreenState extends State<PartyCreateScreen> {
                   'Difficulty Level',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : Colors.black87,
                       ),
                 ),
                 const SizedBox(height: 10),
@@ -229,6 +237,9 @@ class _PartyCreateScreenState extends State<PartyCreateScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: DropdownButton<String>(
+                    style: TextStyle(
+                      color: isDark ? Colors.white : Colors.black87,
+                    ),
                     value: _difficulty,
                     isExpanded: true,
                     underline: const SizedBox(),
@@ -261,6 +272,7 @@ class _PartyCreateScreenState extends State<PartyCreateScreen> {
                   'Game Mode',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : Colors.black87,
                       ),
                 ),
                 const SizedBox(height: 10),
@@ -270,6 +282,9 @@ class _PartyCreateScreenState extends State<PartyCreateScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: DropdownButton<String>(
+                    style: TextStyle(
+                      color: isDark ? Colors.white : Colors.black87,
+                    ),
                     value: _gameMode,
                     isExpanded: true,
                     underline: const SizedBox(),
@@ -301,6 +316,7 @@ class _PartyCreateScreenState extends State<PartyCreateScreen> {
                   'Total Rounds: $_totalRounds',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : Colors.black87,
                       ),
                 ),
                 const SizedBox(height: 10),
