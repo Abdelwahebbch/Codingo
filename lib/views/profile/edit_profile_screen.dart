@@ -93,7 +93,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   Widget build(BuildContext context) {
     print(nextQuestionOptions?.length);
-
+    final themeManager = Provider.of<ThemeManager>(context);
+    final isDark = themeManager.themeMode == ThemeMode.dark;
     final authService = Provider.of<DataProvider>(context, listen: false);
     if (pickedPath.isNotEmpty) {
       backgroundImage = FileImage(File(pickedPath));
@@ -253,11 +254,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           hint: newUserGoalsValues.isEmpty
                               ? Text(
                                   userGoalsValues[index],
-                                  style: const TextStyle(color: Colors.white),
+                                  style:  TextStyle(color: isDark ? Colors.white : Colors.black),
                                 )
                               : Text(
                                   newUserGoalsValues[index],
-                                  style: const TextStyle(color: Colors.white),
+                                  style:  TextStyle(color: isDark ? Colors.white : Colors.black),
                                 ),
                           items: items.map((option) {
                             return DropdownMenuItem<String>(
@@ -271,7 +272,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                       style: const TextStyle(
                                           color: AppTheme.primaryColor),
                                     )
-                                  : Text(option.label),
+                                  : Text(option.label,style: TextStyle(color: isDark ? Colors.white : Colors.black),),
                             );
                           }).toList(),
                           onChanged: (value) async {
@@ -293,8 +294,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             }
                             setState(() {
                               String? nextQuestionId;
-                              print(value);
-                              print("aaa&1");
+                              
                               if (newUserGoalsValues.isEmpty) {
                                 String id = questions
                                     .firstWhere((onboardingQuestions) =>
@@ -307,7 +307,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                       .getRange(0, indexValue + 1));
                                   newUserGoalsValues.addAll(
                                       userGoalsValues.getRange(0, indexValue));
-                                  print(newUserGoalsKeys);
                                 } else if (indexValue == 0) {
                                   newUserGoalsKeys.add(userGoalsKeys[0]);
                                   newUserGoalsValues = [];
@@ -318,21 +317,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                         onboardingQuestions.options.any(
                                             (labels) => labels.label == value))
                                     .id;
-                                print("id" + id);
+                                
                                 int indexValue = newUserGoalsKeys.indexOf(id);
-                                print("newUserGoalsKeys" +
-                                    newUserGoalsKeys.toString());
-                                print("indexValue" + indexValue.toString());
                                 if (indexValue > 0) {
                                   int end = newUserGoalsKeys.length;
                                   newUserGoalsKeys.removeRange(
                                       indexValue + 1, end);
                                   newUserGoalsValues.removeRange(
                                       indexValue, end);
-                                  print("newUserGoalsKeys" +
-                                      newUserGoalsKeys.toString());
-                                  print("newUserGoalsValues" +
-                                      newUserGoalsValues.toString());
                                 } else if (indexValue == 0) {
                                   newUserGoalsKeys = [];
                                   newUserGoalsKeys.add(userGoalsKeys[0]);
@@ -382,15 +374,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     DropdownButton2(
                       isExpanded: true,
                       underline: const SizedBox(),
-                      hint: const Text(
+                      hint:  Text(
                         "Select Option",
-                        style: TextStyle(color: Colors.white),
+                        style: TextStyle(color: isDark ? Colors.white : Colors.black),
                       ),
                       items: nextQuestionOptions!.map((option) {
                         return DropdownMenuItem<String>(
                           value: option.label,
                           child: Text(
                             option.label,
+                            style: TextStyle(color: isDark ? Colors.white : Colors.black),
                           ),
                         );
                       }).toList(),
@@ -461,6 +454,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   Widget _buildEditField(BuildContext context, String label,
       TextEditingController userNameController, bool editable) {
+        final themeManager = Provider.of<ThemeManager>(context);
+    final isDark = themeManager.themeMode == ThemeMode.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -471,6 +466,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 fontSize: 12)),
         const SizedBox(height: 8),
         TextField(
+          style: TextStyle(
+            color: isDark ? Colors.white : Colors.black
+          ),
           readOnly: editable,
           controller: userNameController,
           decoration: InputDecoration(
