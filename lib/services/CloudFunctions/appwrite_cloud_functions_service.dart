@@ -36,25 +36,13 @@ class AppwritecloudfunctionsService extends ChangeNotifier {
       {required String id,
       required String progLang,
       required String desc}) async {
-    int x = 0;
-
-    while (x <= 4) {
-      try {
-        final res = await http.post(
-            Uri.parse('https://69c8037600042b81ce1b.fra.appwrite.run/'),
-            body:
-                jsonEncode({"progLang": progLang, "userId": id, "desc": desc}));
-        if (res.statusCode > 499) {
-          debugPrint(res.body);
-          if (x >= 4) throw Exception("Max attempts reached");
-        } else {
-          debugPrint("Another exception");
-        }
-        x++;
-      } catch (e) {
-        debugPrint("Error when create learning path $e");
-        rethrow;
-      }
+    try {
+      await http.post(
+          Uri.parse('https://69c8037600042b81ce1b.fra.appwrite.run/'),
+          body: jsonEncode({"progLang": progLang, "userId": id, "desc": desc}));
+    } catch (e) {
+      debugPrint("Error when create learning path $e");
+      rethrow;
     }
   }
 
@@ -115,17 +103,18 @@ class AppwritecloudfunctionsService extends ChangeNotifier {
   }
 
   static Future<void> requestForConceptsMissions(
-      String id, String concept) async {
+      String lpId, String id, String concept) async {
     try {
       final res = await http.post(
           Uri.parse('https://69ce45470028a158ac46.fra.appwrite.run/'),
           body: jsonEncode({
+            "lpID": lpId,
             "userId": id,
             "desc": concept,
           }));
 
       // List<dynamic> data = [];
-      final  decoded = jsonDecode(res.body);
+      final decoded = jsonDecode(res.body);
       //final String responseString = decoded["response"];
       //data = jsonDecode(responseString);
       print(decoded);
