@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-
 import 'package:flutter_code_editor/flutter_code_editor.dart';
+import 'package:pfe_test/models/LearningPath/concept.dart';
+import 'package:pfe_test/models/LearningPath/learning_path.dart';
+import 'package:pfe_test/models/LearningPath/milestone.dart';
 import 'package:pfe_test/models/mission_model.dart';
 import 'package:pfe_test/services/CloudFunctions/appwrite_cloud_functions_service.dart';
 import 'package:pfe_test/services/Data/data_provider.dart';
@@ -10,15 +12,23 @@ import 'package:pfe_test/views/dashboard/dashboard_screen.dart';
 import 'package:pfe_test/widgets/choice_challenge.dart';
 import 'package:pfe_test/widgets/ordering_challenge.dart';
 import 'package:provider/provider.dart';
-
 import 'package:highlight/languages/python.dart';
 
 class MissionDetailScreen extends StatefulWidget {
   final Mission mission;
+  final LearningPath? learningPath;
+  final Concept? concept;
+  final LearningPathMilestone? milestone;
   final bool isLearningPath;
 
-  const MissionDetailScreen(
-      {super.key, required this.isLearningPath, required this.mission});
+  const MissionDetailScreen({
+    super.key,
+    required this.isLearningPath,
+    required this.mission,
+    this.learningPath,
+    this.concept,
+    this.milestone,
+  });
 
   @override
   State<MissionDetailScreen> createState() => _MissionDetailScreenState();
@@ -70,48 +80,49 @@ class _MissionDetailScreenState extends State<MissionDetailScreen> {
                               color: AppTheme.accentColor,
                               fontWeight: FontWeight.bold,
                               fontSize: 12)),
-                      TextButton(
-                          onPressed: () async {
-                            final authService = Provider.of<DataProvider>(
-                                context,
-                                listen: false);
-                            showDialog(
-                              context: context,
-                              barrierDismissible: false,
-                              builder: (context) => AlertDialog(
-                                title: const Center(child: Text("Warning !")),
-                                content: const Text(
-                                    "Are you sure you want to surrender?"),
-                                actions: [
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      TextButton(
-                                        onPressed: () {
-                                          Navigator.pop(context);
-                                        },
-                                        child: const Text("Cancel"),
-                                      ),
-                                      TextButton(
-                                        onPressed: () async {
-                                          await authService.surrendereMission(
-                                              widget.mission.id);
-                                          Navigator.pop(context);
-                                          Navigator.pop(context);
-                                        },
-                                        child: const Text("OK"),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                          child: const Text(
-                            "Surrendere",
-                            style: TextStyle(color: Colors.redAccent),
-                          ))
+                      if (!widget.isLearningPath)
+                        TextButton(
+                            onPressed: () async {
+                              final authService = Provider.of<DataProvider>(
+                                  context,
+                                  listen: false);
+                              showDialog(
+                                context: context,
+                                barrierDismissible: false,
+                                builder: (context) => AlertDialog(
+                                  title: const Center(child: Text("Warning !")),
+                                  content: const Text(
+                                      "Are you sure you want to surrender?"),
+                                  actions: [
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        TextButton(
+                                          onPressed: () {
+                                            Navigator.pop(context);
+                                          },
+                                          child: const Text("Cancel"),
+                                        ),
+                                        TextButton(
+                                          onPressed: () async {
+                                            await authService.surrendereMission(
+                                                widget.mission.id);
+                                            Navigator.pop(context);
+                                            Navigator.pop(context);
+                                          },
+                                          child: const Text("OK"),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                            child: const Text(
+                              "Surrendere",
+                              style: TextStyle(color: Colors.redAccent),
+                            ))
                     ],
                   ),
                   const SizedBox(height: 8),
@@ -385,14 +396,25 @@ class _MissionDetailScreenState extends State<MissionDetailScreen> {
       authService.updateMissionStatus(widget.mission.id, rate);
     } else if (!widget.isLearningPath) {
       authService.updateFailedNb(widget.mission.id);
+    } else if (isCorrect && widget.isLearningPath) {
+      print("Wsoolna");
+      setState(() {
+        widget.mission.isCompleted.value = true;
+       
+      });
+
+     // authService.saveLearningPath();
+      //authService.updateMissionStatus(widget.mission.id, rate);
     }
     if (!mounted) return;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(isCorrect ? "Mission Accomplished!" : "Not Quite..."),
+        title: Text(isCorrect ? "Mission Accomplished !" : "Not Quite..."),
         content: Text(isCorrect
-            ? "Great job! You've earned ${widget.mission.points} XP."
+            ? (widget.isLearningPath)
+                ? "Great job !"
+                : "Great job ! You've earned ${widget.mission.points} XP."
             : "That's not the right answer. Try asking the AI Tutor for a hint!"),
         actions: [
           TextButton(
