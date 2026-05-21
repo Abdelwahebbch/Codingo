@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:pfe_test/models/learning_path_model.dart';
+import 'package:pfe_test/models/LearningPath/concept.dart';
+import 'package:pfe_test/models/LearningPath/learning_path.dart';
 import 'package:pfe_test/models/mission_model.dart';
-import 'package:pfe_test/services/Data/data_provider.dart';
 import 'package:pfe_test/theme/app_theme.dart';
 import 'package:pfe_test/views/mission/mission_detail_screen.dart';
-
-import 'package:provider/provider.dart';
 
 class ConceptDetailScreen extends StatefulWidget {
   final Concept concept;
@@ -102,7 +100,7 @@ class _ConceptDetailScreenState extends State<ConceptDetailScreen> {
                         const SizedBox(width: 12),
                         Container(
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: .2),
+                            color: Colors.white.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           padding: const EdgeInsets.symmetric(
@@ -134,66 +132,72 @@ class _ConceptDetailScreenState extends State<ConceptDetailScreen> {
               ),
 
               // Progress Section
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Your Progress',
-                          style:
-                              Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                        ),
-                        Text(
-                          '${widget.concept.completionPercentage}%',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.primaryColor,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ],
+          ListenableBuilder(
+  listenable: Listenable.merge(
+    widget.concept.relatedMissionss.map((m) => m.isCompleted).toList(),
+  ),
+  builder: (context, _) {
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Your Progress',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
                     ),
-                    const SizedBox(height: 12),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: LinearProgressIndicator(
-                        value: widget.concept.completionPercentage / 100,
-                        minHeight: 12,
-                        backgroundColor: Colors.grey.withValues(alpha: 0.2),
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          widget.concept.isCompleted
-                              ? Colors.green
-                              : AppTheme.primaryColor,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    if (widget.concept.startedAt != null)
-                      Column(
-                        children: [
-                          _buildProgressInfo(
-                            'Started',
-                            _formatDate(widget.concept.startedAt!),
-                            '📅',
-                          ),
-                          const SizedBox(height: 8),
-                          if (widget.concept.completedAt != null)
-                            _buildProgressInfo(
-                              'Completed',
-                              _formatDate(widget.concept.completedAt!),
-                              '✅',
-                            ),
-                        ],
-                      ),
-                  ],
+              ),
+              Text(
+                '${(widget.concept.completionPercentage * 100).round()}%',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.primaryColor,
+                  fontSize: 16,
                 ),
               ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: LinearProgressIndicator(
+              value: widget.concept.completionPercentage,
+              minHeight: 12,
+              backgroundColor: Colors.grey.withValues(alpha: 0.2),
+              valueColor: AlwaysStoppedAnimation<Color>(
+                widget.concept.isCompleted
+                    ? Colors.green
+                    : AppTheme.primaryColor,
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          if (widget.concept.startedAt != null)
+            Column(
+              children: [
+                _buildProgressInfo(
+                  'Started',
+                  _formatDate(widget.concept.startedAt!),
+                  '📅',
+                ),
+                const SizedBox(height: 8),
+                if (widget.concept.completedAt != null)
+                  _buildProgressInfo(
+                    'Completed',
+                    _formatDate(widget.concept.completedAt!),
+                    '✅',
+                  ),
+              ],
+            ),
+        ],
+      ),
+    );
+  },
+),
 
               // Description
               Padding(
@@ -238,7 +242,7 @@ class _ConceptDetailScreenState extends State<ConceptDetailScreen> {
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
                                 color: concept.isCompleted
-                                    ? Colors.green.withValues(alpha: .3)
+                                    ? Colors.green.withValues(alpha: 0.3)
                                     : Colors.grey.withValues(alpha: 0.2),
                               ),
                             ),
@@ -287,7 +291,8 @@ class _ConceptDetailScreenState extends State<ConceptDetailScreen> {
                 ),
 
               // Related Missions
-              // if (widget.concept.relatedMissions.isNotEmpty)
+
+              // if (widget.concept.relatedMissionsIds.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.all(20),
                 child: Column(
@@ -299,209 +304,86 @@ class _ConceptDetailScreenState extends State<ConceptDetailScreen> {
                             fontWeight: FontWeight.bold,
                           ),
                     ),
+                    if (widget.concept.relatedMissions.isEmpty)
+                      const Text('AA'),
                     const SizedBox(height: 12),
-                    FutureBuilder<List<Mission>>(
-                      future: Future.wait(
-                        widget.concept.relatedMissions.map((missionId) {
-                          var authService = Provider.of<DataProvider>(
-                              context,
-                              listen: false);
-                          return authService.loadMissions(missionId);
-                        }),
-                      ),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const Center(
-                              child: CircularProgressIndicator());
-                        }
-                        if (snapshot.hasError) {
-                          return Text('Error: ${snapshot.error}');
-                        }
-                        if (snapshot.data!.isEmpty) {
-                          return const Text('There is no missions 😉');
-                        }
-                        final missions = snapshot.data ?? [];
-                        return Column(
-                          children: missions.map((m) {
-                            return GestureDetector(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => MissionDetailScreen(
-                                        isLearningPath: true, mission: m),
-                                  ),
-                                );
-                              },
-                              child: Container(
-                                margin: const EdgeInsets.only(bottom: 12),
-                                decoration: BoxDecoration(
-                                  color: AppTheme.primaryColor
-                                      .withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                padding: const EdgeInsets.all(12),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      decoration: const BoxDecoration(
-                                        color: AppTheme.primaryColor,
-                                        shape: BoxShape.circle,
-                                      ),
-                                      padding: const EdgeInsets.all(8),
-                                      child: const Icon(
-                                        Icons.assignment,
-                                        color: Colors.white,
-                                        size: 18,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            m.title,
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .titleSmall
-                                                ?.copyWith(
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                          ),
-                                          Text(
-                                            'Practice this concept',
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodySmall
-                                                ?.copyWith(
-                                                  color: Colors.grey[600],
-                                                ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    const Icon(Icons.arrow_forward,
-                                        color: Colors.grey),
-                                  ],
-                                ),
-                              ),
-                            );
-                          }).toList(), // This .toList() now returns List<Widget> correctly!
-                        );
-                      },
-                    )
-                  ],
-                ),
-              ),
-
-              // Learning Resources
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Learning Resources',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                    ),
-                    const SizedBox(height: 12),
-                    _buildResourceTile(
-                      'Video Tutorial',
-                      'Learn from interactive videos',
-                      Icons.video_library,
-                      Colors.red,
-                    ),
-                    const SizedBox(height: 12),
-                    _buildResourceTile(
-                      'Documentation',
-                      'Read detailed guides and examples',
-                      Icons.description,
-                      Colors.blue,
-                    ),
-                    const SizedBox(height: 12),
-                    _buildResourceTile(
-                      'Practice Exercises',
-                      'Solve problems to reinforce learning',
-                      Icons.code,
-                      Colors.green,
-                    ),
-                  ],
-                ),
-              ),
-
-              // Action Buttons
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  children: [
-                    if (!widget.concept.isCompleted)
-                      SizedBox(
-                        width: double.infinity,
-                        height: 48,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            // Navigate to related missions
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Starting related missions...'),
-                              ),
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.primaryColor,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: const Text(
-                            'Start Learning',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      )
-                    else
-                      Container(
-                        width: double.infinity,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: Colors.green.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: Colors.green,
-                            width: 2,
-                          ),
-                        ),
-                        child: const Center(
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.check_circle, color: Colors.green),
-                              SizedBox(width: 8),
-                              Text(
-                                'Concept Completed',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.green,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
+                    ...widget.learningPath.missions
+                        .where((m) => m.conceptId!.contains(widget.concept.id))
+                        .map((mission) => _missionTile(mission, context)),
                   ],
                 ),
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  GestureDetector _missionTile(Mission mission, BuildContext context) {
+    return GestureDetector(
+      onTap: () => mission.isCompleted.value
+          ? null
+          : Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => MissionDetailScreen(
+                      isLearningPath: true,
+                      mission: mission,
+                      concept: widget.concept,
+                      learningPath: widget.learningPath))),
+      child: ValueListenableBuilder<bool>(
+        valueListenable: mission.isCompleted,
+        builder: (context, isCompleted, _) {
+          return Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            decoration: BoxDecoration(
+              color: AppTheme.primaryColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                Container(
+                  decoration: const BoxDecoration(
+                    color: AppTheme.primaryColor,
+                    shape: BoxShape.circle,
+                  ),
+                  padding: const EdgeInsets.all(8),
+                  child: const Icon(
+                    Icons.assignment,
+                    color: Colors.white,
+                    size: 18,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        mission.title,
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                      ),
+                      Text(
+                        'Practice this concept',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Colors.grey[600],
+                            ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  isCompleted ? Icons.check_circle : Icons.arrow_forward,
+                  color: isCompleted ? Colors.green : Colors.grey,
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
@@ -549,57 +431,6 @@ class _ConceptDetailScreenState extends State<ConceptDetailScreen> {
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
       ],
-    );
-  }
-
-  Widget _buildResourceTile(
-    String title,
-    String subtitle,
-    IconData icon,
-    Color color,
-  ) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppTheme.cardColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.grey.withValues(alpha: 0.2),
-        ),
-      ),
-      padding: const EdgeInsets.all(12),
-      child: Row(
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              color: color.withValues(alpha:0.2),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            padding: const EdgeInsets.all(8),
-            child: Icon(icon, color: color),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                ),
-                Text(
-                  subtitle,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.grey[600],
-                      ),
-                ),
-              ],
-            ),
-          ),
-          const Icon(Icons.arrow_forward, color: Colors.grey),
-        ],
-      ),
     );
   }
 
