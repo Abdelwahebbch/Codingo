@@ -1,200 +1,240 @@
-import 'package:pfe_test/models/mission_model.dart';
+// import 'package:pfe_test/models/LearningPath/concept.dart';
+// import 'package:pfe_test/models/LearningPath/learning_path.dart';
+// import 'package:pfe_test/models/LearningPath/milestone.dart';
+// import 'package:pfe_test/models/mission_model.dart';
 
-class Concept {
-  final String id;
-  final String name;
-  final String description;
-  final String category;
-  final int difficulty; // 1-5
-  final int estimatedHours;
-  final List<String> prerequisites;
-  final List<String> relatedMissions;
-  final String icon;
-  final bool isCompleted;
-  final int completionPercentage; // 0-100
-  final DateTime? startedAt;
-  final DateTime? completedAt;
+// class LearningPathSampleData {
+//   static LearningPath getSamplePythonPath() {
+//     final missions = [
+//       Mission(
+//         id: 'mission-001',
+//         title: 'Missions One',
+//         description: 'This is a Missions',
+//         type: MissionType.complete,
+//         points: 5000,
+//         difficulty: 3,
+//       ),
+//       Mission(
+//         id: 'mission-002',
+//         title: 'Missions One',
+//         description: 'This is a Missions',
+//         type: MissionType.ordering,
+//         points: 5000,
+//         difficulty: 3,
+//       ),
+//       Mission(
+//         id: 'mission-003',
+//         title: 'Missions One',
+//         description: 'This is a Missions',
+//         type: MissionType.multipleChoice,
+//         points: 5000,
+//         difficulty: 3,
+//       ),
+//       Mission(
+//         id: 'mis-001',
+//         title: 'Missions One',
+//         description: 'This is a Missions',
+//         type: MissionType.complete,
+//         points: 5000,
+//         difficulty: 3,
+//       ),
+//     ];
+//     final concepts = [
+//       Concept(
+//         id: 'var-001',
+//         name: 'Variables & Data Types',
+//         description:
+//             'Learn about variables, strings, numbers, and basic data types',
+//         category: 'Fundamentals',
+//         difficulty: 1,
+//         estimatedHours: 2,
+//         prerequisites: [],
+//         relatedMissionsIds: ['mission-001', 'mission-002'],
+//         icon: '📦',
+       
+//         startedAt: DateTime.now().subtract(const Duration(days: 30)),
+//         completedAt: DateTime.now().subtract(const Duration(days: 25)),
+//         relatedMissions: [],
+//       ),
+//       Concept(
+//         id: 'cond-001',
+//         name: 'Conditionals & Logic',
+//         description: 'Master if/else statements and boolean logic',
+//         category: 'Control Flow',
+//         difficulty: 1,
+//         estimatedHours: 3,
+//         prerequisites: ['var-001'],
+//         relatedMissionsIds: ['mission-003', 'mission-004'],
+//         icon: '🔀',
+      
+//         startedAt: DateTime.now().subtract(const Duration(days: 24)),
+//         completedAt: DateTime.now().subtract(const Duration(days: 20)),
+//         relatedMissions: [],
+//       ),
+//       Concept(
+//         id: 'loop-001',
+//         name: 'Loops & Iteration',
+//         description:
+//             'Understand for loops, while loops, and iteration patterns',
+//         category: 'Control Flow',
+//         difficulty: 2,
+//         estimatedHours: 4,
+//         prerequisites: ['cond-001'],
+//         relatedMissionsIds: ['mission-005', 'mission-006'],
+//         icon: '🔁',
+      
+//         startedAt: DateTime.now().subtract(const Duration(days: 19)),
+//         completedAt: DateTime.now().subtract(const Duration(days: 15)),
+//         relatedMissions: [],
+//       ),
+//       Concept(
+//         id: 'func-001',
+//         name: 'Functions & Scope',
+//         description: 'Create reusable functions and understand variable scope',
+//         category: 'Functions',
+//         difficulty: 2,
+//         estimatedHours: 5,
+//         prerequisites: ['loop-001'],
+//         relatedMissionsIds: ['mission-007', 'mission-008'],
+//         icon: '⚙️',
+      
+//         startedAt: DateTime.now().subtract(const Duration(days: 14)),
+//         completedAt: DateTime.now().subtract(const Duration(days: 10)),
+//         relatedMissions: [],
+//       ),
+//       Concept(
+//         id: 'list-001',
+//         name: 'Lists & Collections',
+//         description: 'Work with lists, tuples, and other collection types',
+//         category: 'Data Structures',
+//         difficulty: 2,
+//         estimatedHours: 4,
+//         prerequisites: ['func-001'],
+//         relatedMissionsIds: ['mission-009', 'mission-010'],
+//         icon: '📋',
+       
+//         startedAt: DateTime.now().subtract(const Duration(days: 9)),
+//         completedAt: DateTime.now().subtract(const Duration(days: 5)),
+//         relatedMissions: [],
+//       ),
+//       Concept(
+//         id: 'dict-001',
+//         name: 'Dictionaries & Maps',
+//         description: 'Master key-value data structures',
+//         category: 'Data Structures',
+//         difficulty: 2,
+//         estimatedHours: 3,
+//         prerequisites: ['list-001'],
+//         relatedMissionsIds: ['mission-011', 'mission-012'],
+//         icon: '🗺️',
+       
 
-  Concept({
-    required this.id,
-    required this.name,
-    required this.description,
-    required this.category,
-    required this.difficulty,
-    required this.estimatedHours,
-    required this.prerequisites,
-    required this.relatedMissions,
-    required this.icon,
-    this.isCompleted = false,
-    this.completionPercentage = 0,
-    this.startedAt,
-    this.completedAt,
-  });
+//         startedAt: DateTime.now().subtract(const Duration(days: 4)),
+//         relatedMissions: [],
+//       ),
+//       Concept(
+//         id: 'oop-001',
+//         name: 'Object-Oriented Programming',
+//         description: 'Learn classes, objects, inheritance, and polymorphism',
+//         category: 'OOP',
+//         difficulty: 3,
+//         estimatedHours: 8,
+//         prerequisites: ['dict-001', 'func-001'],
+//         relatedMissionsIds: ['mission-013', 'mission-014'],
+//         icon: '🏗️',
+  
+   
+//         relatedMissions: [],
+//       ),
+//       Concept(
+//         id: 'err-001',
+//         name: 'Error Handling',
+//         description: 'Handle exceptions and write robust error-handling code',
+//         category: 'Advanced',
+//         difficulty: 3,
+//         estimatedHours: 3,
+//         prerequisites: ['oop-001'],
+//         relatedMissionsIds: ['mission-015', 'mission-016'],
+//         icon: '⚠️',
+  
+//         relatedMissions: [],
+//       ),
+//       Concept(
+//         id: 'file-001',
+//         name: 'File I/O & Modules',
+//         description: 'Read/write files and organize code with modules',
+//         category: 'Advanced',
+//         difficulty: 3,
+//         estimatedHours: 4,
+//         prerequisites: ['err-001'],
+//         relatedMissionsIds: ['mission-017', 'mission-018'],
+//         icon: '📁',
 
-  factory Concept.fromJson(Map<String, dynamic> json) {
-    return Concept(
-      name: json['name'] ?? '',
-      description: json['description'] ?? '',
-      category: json['category'] ?? '',
-      difficulty: json['difficulty'] ?? 0,
-      estimatedHours: json['estimatedHours'] ?? 0,
-      // Safely parse lists of strings
-      prerequisites: List<String>.from(json['prerequisites'] ?? []),
-      relatedMissions: List<String>.from(json['relatedMissions'] ?? []),
-      icon: json['icon'] ?? '',
-      isCompleted: json['isCompleted'] ?? false,
-      completionPercentage: json['completionPercentage'] ?? 0,
-      startedAt:
-          json['startedAt'] != null ? DateTime.parse(json['startedAt']) : null,
-      id: json['\$id'] ?? '',
-    );
-  }
-  Map<String, dynamic> toJson() {
-    return {
-      '\$id': id,
-      'name': name,
-      'description': description,
-      'category': category,
-      'difficulty': difficulty,
-      'estimatedHours': estimatedHours,
-      'prerequisites': prerequisites,
-      'relatedMissions': relatedMissions,
-      'icon': icon,
-      'isCompleted': isCompleted,
-      'completionPercentage': completionPercentage,
-      'startedAt': startedAt?.toIso8601String(),
-      'completedAt': completedAt?.toIso8601String(),
-    };
-  }
-}
+//         relatedMissions: [],
+//       ),
+//     ];
 
-class LearningPathMilestone {
-  final String id;
-  final String title;
-  final String description;
-  final List<Concept> concepts;
-  final int order;
-  final bool isUnlocked;
-  final bool isCompleted;
-  final int completionPercentage;
-  final String icon;
-  final DateTime? unlockedAt;
-  final DateTime? completedAt;
+//     final milestones = [
+//       LearningPathMilestone(
+//         id: 'milestone-001',
+//         title: 'Python Basics',
+//         description: 'Master the fundamentals of Python programming',
+//         conceptIds: ['var-001', 'cond-001', 'loop-001'],
+//         order: 1,
+//         isUnlocked: true,
+//         isCompleted: true,
+//         completionPercentage: 100,
+//         icon: '🎯',
+//         completedAt: DateTime.now().subtract(const Duration(days: 15)), concepts: [],
+//       ),
+//       LearningPathMilestone(
+//         id: 'milestone-002',
+//         title: 'Functions & Data Structures',
+//         description: 'Learn to write functions and work with collections',
+//         conceptIds: ['func-001', 'list-001', 'dict-001'],
+//         order: 2,
+//         isUnlocked: true,
+//         isCompleted: false,
+//         completionPercentage: 70,
+//         icon: '🔧',
+//         unlockedAt: DateTime.now().subtract(const Duration(days: 14)), concepts: [],
+//       ),
+//       LearningPathMilestone(
+//         id: 'milestone-003',
+//         title: 'Object-Oriented Programming',
+//         description: 'Master OOP concepts and design patterns',
+//         conceptIds: ['oop-001', 'err-001'],
+//         order: 3,
+//         isUnlocked: false,
+//         isCompleted: false,
+//         completionPercentage: 0,
+//         icon: '🏛️', concepts: [],
+//       ),
+//       LearningPathMilestone(
+//         id: 'milestone-004',
+//         title: 'Advanced Topics',
+//         description: 'Explore file handling, modules, and more',
+//         conceptIds: ['file-001'],
+//         order: 4,
+//         isUnlocked: false,
+//         isCompleted: false,
+//         completionPercentage: 0,
+//         icon: '🚀', concepts: [],
+//       ),
+//     ];
 
-  LearningPathMilestone({
-    required this.id,
-    required this.title,
-    required this.description,
-    required this.concepts,
-    required this.order,
-    this.isUnlocked = false,
-    this.isCompleted = false,
-    this.completionPercentage = 0,
-    required this.icon,
-    this.unlockedAt,
-    this.completedAt,
-  });
-
-  factory LearningPathMilestone.fromJson(Map<String, dynamic> json) {
-    return LearningPathMilestone(
-      id: json['\$id'] ?? '',
-      title: json['title'] ?? '',
-      description: json['description'] ?? '',
-      order: json['order'] ?? 0,
-      isUnlocked: json['isUnlocked'] ?? false,
-      isCompleted: json['isCompleted'] ?? false,
-      completionPercentage: json['completionPercentage'] ?? 0,
-      completedAt: json['completedAt'] != null
-          ? DateTime.parse(json['completedAt'])
-          : null,
-      icon: json['icon'] ?? '',
-      concepts: (json['concepts'] as List<dynamic>?)
-              ?.map((e) => Concept.fromJson(e as Map<String, dynamic>))
-              .toList() ??
-          [],
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'title': title,
-      'description': description,
-      'concepts': concepts.map((c) => c.toJson()).toList(),
-      'order': order,
-      'isUnlocked': isUnlocked,
-      'isCompleted': isCompleted,
-      'completionPercentage': completionPercentage,
-      'icon': icon,
-      'unlockedAt': unlockedAt?.toIso8601String(),
-      'completedAt': completedAt?.toIso8601String(),
-    };
-  }
-}
-
-class LearningPath {
-  final String userId;
-  final String topic;
-  final List<LearningPathMilestone> milestones;
-  final List<Concept> concepts;
-  final List<Mission> missions;
-  final int totalConceptsCompleted;
-  final int totalConcepts;
-  final int overallProgressPercentage;
-  final DateTime? startedAt;
-  final DateTime? completedAt;
-  final String currentLevel;
-
-  LearningPath({
-    required this.userId,
-    required this.topic,
-    required this.milestones,
-    this.concepts = const [],
-    this.missions = const [],
-    required this.totalConceptsCompleted,
-    required this.totalConcepts,
-    required this.overallProgressPercentage,
-    required this.startedAt,
-    this.completedAt,
-    required this.currentLevel,
-  });
-
-  int get remainingConcepts => totalConcepts - totalConceptsCompleted;
-  int get completedPercentage =>
-      totalConcepts > 0 ? (totalConceptsCompleted * 100 ~/ totalConcepts) : 0;
-  int get completedMilestones => milestones.where((m) => m.isCompleted).length;
-  int get unlockedMilestones => milestones.where((m) => m.isUnlocked).length;
-
-  factory LearningPath.fromJson(Map<String, dynamic> json,
-      List<LearningPathMilestone> m, List<Concept> c) {
-    return LearningPath(
-      userId: json[r'$id'] ?? '',
-      topic: json['topic'] ?? '',
-      totalConceptsCompleted: json['totalConceptsCompleted'] ?? 0,
-      totalConcepts: json['totalConcepts'] ?? 0,
-      overallProgressPercentage: json['overallProgressPercentage'] ?? 0,
-      startedAt:
-          json['startedAt'] != null ? DateTime.parse(json['startedAt']) : null,
-      completedAt: json['completedAt'] != null
-          ? DateTime.parse(json['completedAt'])
-          : null,
-      currentLevel: json['currentLevel'] ?? '',
-      // Safely map the nested list of milestones
-      milestones: m,
-      concepts: c,
-    );
-  }
-  Map<String, dynamic> toJson() {
-    return {
-      '\$id': userId,
-      'topic': topic,
-      'milestones': milestones.map((m) => m.toJson()).toList(),
-      'totalConceptsCompleted': totalConceptsCompleted,
-      'totalConcepts': totalConcepts,
-      'overallProgressPercentage': overallProgressPercentage,
-      'startedAt': startedAt!.toIso8601String(),
-      'completedAt': completedAt?.toIso8601String(),
-      'currentLevel': currentLevel,
-    };
-  }
-}
+//     return LearningPath(
+//       id: 'user-123',
+//       language: 'Python',
+//       milestones: milestones,
+//       concepts: concepts,
+//       missions: missions,
+//       totalConceptsCompleted: 5,
+//       totalConcepts: 9,
+//       overallProgressPercentage: 56,
+//       startedAt: DateTime.now().subtract(const Duration(days: 30)),
+//       currentLevel: 'Intermediate',
+//       completedAt: DateTime.now().subtract(const Duration(days: 30)),
+//     );
+//   }
+// }
