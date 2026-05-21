@@ -92,20 +92,11 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
       await authRepository.continueWithGoogle();
       await init();
-      // try {
-      //   //await createNewRow();
-      // } on AppwriteException catch (e) {
-      //   if (e.code == 409) {
-      //     print("User row already exists. Skipping creation.");
-      //   } else {
-      //     rethrow;
-      //   }
-      // }
 
       _isLoading = false;
       notifyListeners();
     } catch (e) {
-      print("Appwrite Auth Error: ${e}");
+      print("Appwrite Auth Error: $e");
     } finally {
       _isLoading = false;
       notifyListeners();
