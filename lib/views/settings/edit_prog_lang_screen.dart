@@ -34,7 +34,8 @@ class _EditProgLangScreenState extends State<EditProgLangScreen> {
   @override
   Widget build(BuildContext context) {
     final authService = Provider.of<DataProvider>(context, listen: false);
-
+    final themeManager = Provider.of<ThemeManager>(context);
+    final isDark = themeManager.themeMode == ThemeMode.dark;
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(
@@ -68,7 +69,7 @@ class _EditProgLangScreenState extends State<EditProgLangScreen> {
                 underline: const SizedBox(),
                 hint: Text(
                   selectedLanguage!,
-                  style: const TextStyle(color: Colors.white),
+                  style:  TextStyle(color: isDark ? Colors.white : Colors.black),
                 ),
                 items: items.map((lang) {
                   return DropdownMenuItem<String>(
@@ -78,7 +79,7 @@ class _EditProgLangScreenState extends State<EditProgLangScreen> {
                             lang,
                             style: const TextStyle(color: AppTheme.primaryColor),
                           )
-                        : Text(lang),
+                        : Text(lang,style: TextStyle(color: isDark ? Colors.white : Colors.black),),
                   );
                 }).toList(),
                 onChanged: (value) {

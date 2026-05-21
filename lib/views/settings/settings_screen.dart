@@ -22,7 +22,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     final authService = Provider.of<DataProvider>(context, listen: true);
     final auth= Provider.of<AuthProvider>(context, listen: true);
-    final themeManager = Provider.of<ThemeManager>(context);
+    final themeManager = Provider.of<ThemeManager>(context,listen: true);
 
     final isDark = themeManager.themeMode == ThemeMode.dark;
     return SafeArea(
@@ -33,10 +33,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(
               height: 40,
             ),
-            const Text(
+            Text(
               "Settings",
               style: TextStyle(
-                  color: Colors.white, fontSize: 21, fontWeight: FontWeight.bold),
+                  color: isDark ? Colors.white : Colors.black87, fontSize: 21, fontWeight: FontWeight.bold),
             ),
             const SizedBox(
               height: 16,
@@ -77,9 +77,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 showDialog(
                     context: context,
                     builder: (context) {
-                      return const AlertDialog(
-                        title: Text("Coming Soon"),
-                        content: Text(
+                      return AlertDialog(
+                        title: Text("Coming Soon",style: TextStyle(color:  isDark ? Colors.white: Colors.black87),),
+                        content: const Text(
                             "This feature is not yet available. It will be released in a future update."),
                       );
                     });
@@ -91,12 +91,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               activeTrackColor: AppTheme.primaryColor,
               onChanged: (val) => themeManager.toggleTheme(val),
             ),
-            ListTile(
-              title: const Text("Missions Difficulty"),
-              subtitle: Text(authService.progress.difficultySelected),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: _showDifficultyPicker,
-            ),
+            
             const SizedBox(height: 24),
             _buildSectionHeader("Support"),
             _buildSettingTile(
@@ -172,37 +167,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
       required String title,
       String? subtitle,
       required VoidCallback onTap}) {
+        final themeManager = Provider.of<ThemeManager>(context,listen: true);
+        final isDark = themeManager.themeMode == ThemeMode.dark;
     return ListTile(
-      leading: Icon(icon, color: Colors.white70),
+      leading: Icon(icon, color:  isDark ? Colors.white70 : Colors.black87,),
       title: Text(title),
       subtitle: subtitle != null
           ? Text(subtitle, style: const TextStyle(color: Colors.grey))
           : null,
-      trailing: const Icon(Icons.chevron_right, size: 20),
+      trailing:  Icon(Icons.chevron_right, size: 20,color: isDark ? Colors.white : Colors.black87,),
       onTap: onTap,
     );
   }
-
-  void _showDifficultyPicker() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppTheme.cardColor,
-      builder: (context) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: ['Beginner', 'Intermediate', 'Advanced']
-            .map((level) => ListTile(
-                  title: Text(level),
-                  onTap: () {
-                    setState(() {
-                      
-                      Provider.of<DataProvider>(context, listen: false)
-                          .updateDifficultySelected(level);
-                    });
-                    Navigator.pop(context);
-                  },
-                ))
-            .toList(),
-      ),
-    );
-  }
+  
 }

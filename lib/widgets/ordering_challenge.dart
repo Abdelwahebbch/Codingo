@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/mission_model.dart';
 import '../theme/app_theme.dart';
 
@@ -29,6 +30,9 @@ class _OrderingChallengeState extends State<OrderingChallenge> {
 
   @override
   Widget build(BuildContext context) {
+    final themeManager = Provider.of<ThemeManager>(context);
+
+    final isDark = themeManager.themeMode == ThemeMode.dark;
     //TODO : order missions by diff 
     return ReorderableListView(
       shrinkWrap: true,
@@ -46,7 +50,7 @@ class _OrderingChallengeState extends State<OrderingChallenge> {
           Card(
             key: ValueKey(_currentOrder[i]),
             margin: const EdgeInsets.only(bottom: 8),
-            color: AppTheme.cardColor,
+            color: isDark ? AppTheme.cardColor : Colors.white,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             child: ListTile(
               leading: const Icon(Icons.drag_handle, color: Colors.grey),

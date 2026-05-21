@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/mission_model.dart';
 import '../theme/app_theme.dart';
 
@@ -19,6 +20,8 @@ class _ChoiceChallengeState extends State<ChoiceChallenge> {
 
   @override
   Widget build(BuildContext context) {
+    final themeManager = Provider.of<ThemeManager>(context);
+    final isDark = themeManager.themeMode == ThemeMode.dark;
     final options = widget.mission.options ?? [];
     final isMultiple = widget.mission.type == MissionType.multipleChoice;
 
@@ -42,7 +45,7 @@ class _ChoiceChallengeState extends State<ChoiceChallenge> {
               decoration: BoxDecoration(
                 color: isSelected
                     ? AppTheme.primaryColor.withValues(alpha: 0.2)
-                    : AppTheme.cardColor,
+                    : isDark ? AppTheme.cardColor : Colors.white,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: isSelected
@@ -68,7 +71,7 @@ class _ChoiceChallengeState extends State<ChoiceChallenge> {
                     child: Text(
                       option,
                       style: TextStyle(
-                        color: isSelected ? Colors.white : Colors.white70,
+                        color: isDark ? (isSelected ? Colors.white : Colors.white70) : (isSelected ? Colors.black : Colors.grey),
                         fontWeight:
                             isSelected ? FontWeight.bold : FontWeight.normal,
                       ),
