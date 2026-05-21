@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:pfe_test/models/user_info_model.dart';
-import 'package:pfe_test/services/Auth/auth_provider.dart';
 import 'package:pfe_test/services/Data/data_provider.dart';
 import 'package:pfe_test/views/learning_path/learning_path_screen.dart';
 import 'package:pfe_test/widgets/rank_widget.dart';
@@ -14,34 +13,28 @@ class ProgressCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final authservice = Provider.of<AuthProvider>(context, listen: false);
     final dataservice = Provider.of<DataProvider>(context, listen: false);
     return GestureDetector(
       onTap: () {
         try {
-          if (authservice.currentUser!.id != dataservice.path!.userId) {
-            Exception("For previous user ");
-          }
-
-          final learningPath = dataservice.path!;
-          // LearningPathSampleData.getSamplePythonPath();
+          final learningPath = dataservice.path;
 
           Navigator.push(
             context,
             MaterialPageRoute(
               builder: (context) => LearningPathScreen(
-                learningPath: learningPath,
+                learningPath: learningPath!,
               ),
             ),
           );
         } catch (e) {
           showDialog(
               context: context,
-              builder: (context) => const AlertDialog(
-                    icon: Icon(Icons.info),
+              builder: (context) => AlertDialog(
+                    icon: const Icon(Icons.info),
                     title: Text(
-                      "Learning path not found ! ",
-                      style: TextStyle(fontSize: 12),
+                      "$e",
+                      style: const TextStyle(fontSize: 12),
                     ),
                   ));
         }
@@ -84,7 +77,10 @@ class ProgressCard extends StatelessWidget {
                         rank: dataservice.progress.rank,
                         showBar: false,
                         height: 50,
-                        width: 50), const SizedBox(height: 10,),
+                        width: 50),
+                    const SizedBox(
+                      height: 10,
+                    ),
                     Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 6),
