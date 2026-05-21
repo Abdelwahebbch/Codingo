@@ -11,7 +11,7 @@ class MissionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    bool isComplete = mission.isCompleted;
+    bool isComplete = mission.isCompleted.value;
     bool isSurrendered = mission.isSurrendered;
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),

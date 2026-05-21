@@ -125,7 +125,7 @@ class _BadgesScreenState extends State<BadgesScreen> with SingleTickerProviderSt
     Map<String, dynamic> progress = authService.progress.badgesProgress;
     int missionsCompletedToday = 0;
     for (int i = 0; i < authService.progress.missions.length; i++) {
-      if (authService.progress.missions[i].isCompleted) {
+      if (authService.progress.missions[i].isCompleted.value) {
         missionsCompletedToday += 1;
       }
     }
