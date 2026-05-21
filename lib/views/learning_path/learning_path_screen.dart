@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:pfe_test/models/learning_path_model.dart';
+import 'package:pfe_test/models/LearningPath/concept.dart';
+import 'package:pfe_test/models/LearningPath/learning_path.dart';
+import 'package:pfe_test/models/LearningPath/milestone.dart';
 import 'package:pfe_test/theme/app_theme.dart';
-
 
 import 'concept_detail_screen.dart';
 
@@ -20,20 +21,31 @@ class LearningPathScreen extends StatefulWidget {
 class _LearningPathScreenState extends State<LearningPathScreen>
     with TickerProviderStateMixin {
   late TabController _tabController;
-  late AnimationController _progressAnimationController; // ADD
+  late AnimationController _progressAnimationController;
   late Animation<double> _progressAnimation;
-  // not used
+  late Listenable _allMissionsListenable;
   int selectedTab = 0;
 
   @override
   void initState() {
     super.initState();
+
+    // Merge all missions from all concepts into one listenable
+    final allMissions = widget.learningPath.concepts
+        .expand((c) => c.relatedMissionss)
+        .toSet() // avoid duplicates if missions are shared between concepts
+        .map((m) => m.isCompleted)
+        .toList();
+    _allMissionsListenable = Listenable.merge(allMissions);
+    _allMissionsListenable.addListener(_updateProgressAnimation);
+
     _tabController = TabController(length: 3, vsync: this);
     _tabController.addListener(() {
       setState(() {
         selectedTab = _tabController.index;
       });
     });
+
     _progressAnimationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1500),
@@ -48,8 +60,23 @@ class _LearningPathScreenState extends State<LearningPathScreen>
     _progressAnimationController.forward();
   }
 
+  void _updateProgressAnimation() {
+    final newValue = widget.learningPath.overallProgressPercentage / 100;
+    _progressAnimation = Tween<double>(
+      begin: _progressAnimation.value, // animate FROM current position
+      end: newValue,
+    ).animate(CurvedAnimation(
+      parent: _progressAnimationController,
+      curve: Curves.easeOut,
+    ));
+    _progressAnimationController
+      ..reset()
+      ..forward();
+  }
+
   @override
   void dispose() {
+    _allMissionsListenable.removeListener(_updateProgressAnimation);
     _tabController.dispose();
     _progressAnimationController.dispose();
     super.dispose();
@@ -60,7 +87,7 @@ class _LearningPathScreenState extends State<LearningPathScreen>
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(
-          title: Text('${widget.learningPath.topic} Learning Path'),
+          title: Text('${widget.learningPath.language} Learning Path'),
           backgroundColor: AppTheme.primaryColor,
           elevation: 0,
           bottom: TabBar(
@@ -87,224 +114,240 @@ class _LearningPathScreenState extends State<LearningPathScreen>
   }
 
   Widget _buildOverviewTab() {
-    return SingleChildScrollView(
-      child: Column(
-        children: [
-          // Overall Progress
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  AppTheme.primaryColor,
-                  AppTheme.primaryColor.withValues(alpha: .7),
-                ],
-              ),
-            ),
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              children: [
-                Text(
-                  'Overall Progress',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                ),
-                const SizedBox(height: 20),
-                AnimatedBuilder(
-                    animation: _progressAnimation,
-                    builder: (context, child) {
-                      final displayPercentage =
-                          (_progressAnimation.value * 100).toInt();
-                      return Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          SizedBox(
-                            width: 150,
-                            height: 150,
-                            child: CircularProgressIndicator(
-                              year2023: false,
-                              value: _progressAnimation.value,
-                              strokeWidth: 8,
-                              backgroundColor:
-                                  Colors.white.withValues(alpha: 0.3),
-                              valueColor: const AlwaysStoppedAnimation<Color>(
-                                Colors.white,
-                              ),
-                            ),
-                          ),
-                          Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                '$displayPercentage%',
-                                style: const TextStyle(
-                                  fontSize: 32,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              Text(
-                                'Complete',
-                                style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.9),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      );
-                    }),
-                const SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _buildStatItem(
-                      'Completed',
-                      '${widget.learningPath.totalConceptsCompleted}',
-                      Colors.white,
-                    ),
-                    _buildStatItem(
-                      'Remaining',
-                      '${widget.learningPath.remainingConcepts}',
-                      Colors.white,
-                    ),
-                    _buildStatItem(
-                      'Total',
-                      '${widget.learningPath.totalConcepts}',
-                      Colors.white,
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-
-          // Level and Time Info
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Your Learning Journey',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                ),
-                const SizedBox(height: 16),
-                Container(
-                  decoration: BoxDecoration(
-                    color: AppTheme.cardColor,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: Colors.grey.withValues(alpha: .2),
-                    ),
-                  ),
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    children: [
-                      _buildInfoRow(
-                        'Current Level',
-                        widget.learningPath.currentLevel,
-                        '🎓',
-                      ),
-                      const Divider(height: 16),
-                      _buildInfoRow(
-                        'Started',
-                        _formatDate(widget.learningPath.startedAt),
-                        '📅',
-                      ),
-                      const Divider(height: 16),
-                      _buildInfoRow(
-                        'Milestones Completed',
-                        '${widget.learningPath.completedMilestones}/${widget.learningPath.milestones.length}',
-                        '🏆',
-                      ),
-                      const Divider(height: 16),
-                      _buildInfoRow(
-                        'Unlocked Milestones',
-                        '${widget.learningPath.unlockedMilestones}/${widget.learningPath.milestones.length}',
-                        '🔓',
-                      ),
+    return ListenableBuilder(
+      listenable: _allMissionsListenable,
+      builder: (context, _) {
+        return SingleChildScrollView(
+          child: Column(
+            children: [
+              // Overall Progress
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppTheme.primaryColor,
+                      AppTheme.primaryColor.withValues(alpha: .7),
                     ],
                   ),
                 ),
-              ],
-            ),
-          ),
-
-          // Next Steps
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Next Steps',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  children: [
+                    Text(
+                      'Overall Progress',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                    const SizedBox(height: 20),
+                    AnimatedBuilder(
+                        animation: _progressAnimation,
+                        builder: (context, child) {
+                          final displayPercentage =
+                              (_progressAnimation.value * 100).toInt();
+                          return Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              SizedBox(
+                                width: 150,
+                                height: 150,
+                                child: CircularProgressIndicator(
+                                  year2023: false,
+                                  value: _progressAnimation.value,
+                                  strokeWidth: 8,
+                                  backgroundColor:
+                                      Colors.white.withValues(alpha: 0.3),
+                                  valueColor:
+                                      const AlwaysStoppedAnimation<Color>(
+                                    Colors.white,
+                                  ),
+                                ),
+                              ),
+                              Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    '$displayPercentage%',
+                                    style: const TextStyle(
+                                      fontSize: 32,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Complete',
+                                    style: TextStyle(
+                                      color:
+                                          Colors.white.withValues(alpha: 0.9),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          );
+                        }),
+                    const SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _buildStatItem(
+                          'Completed',
+                          '${widget.learningPath.totalConceptsCompleted}',
+                          Colors.white,
+                        ),
+                        _buildStatItem(
+                          'Remaining',
+                          '${widget.learningPath.remainingConcepts}',
+                          Colors.white,
+                        ),
+                        _buildStatItem(
+                          'Total',
+                          '${widget.learningPath.totalConcepts}',
+                          Colors.white,
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 12),
-                _buildNextStepCard(),
-              ],
-            ),
+              ),
+
+              // Level and Time Info
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Your Learning Journey',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: AppTheme.cardColor,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: Colors.grey.withValues(alpha: .2),
+                        ),
+                      ),
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        children: [
+                          _buildInfoRow(
+                            'Current Level',
+                            widget.learningPath.currentLevel,
+                            '🎓',
+                          ),
+                          const Divider(height: 16),
+                          _buildInfoRow(
+                            'Started',
+                            _formatDate(widget.learningPath.startedAt),
+                            '📅',
+                          ),
+                          const Divider(height: 16),
+                          _buildInfoRow(
+                            'Milestones Completed',
+                            '${widget.learningPath.completedMilestones}/${widget.learningPath.milestones.length}',
+                            '🏆',
+                          ),
+                          const Divider(height: 16),
+                          _buildInfoRow(
+                            'Unlocked Milestones',
+                            '${widget.learningPath.unlockedMilestones}/${widget.learningPath.milestones.length}',
+                            '🔓',
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Next Steps
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Next Steps',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                    const SizedBox(height: 12),
+                    _buildNextStepCard(),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
           ),
-          const SizedBox(height: 20),
-        ],
-      ),
+        );
+      },
     );
   }
 
   Widget _buildMilestonesTab() {
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: widget.learningPath.milestones.length,
-      itemBuilder: (context, index) {
-        final milestone = widget.learningPath.milestones[index];
-        return _buildMilestoneCard(milestone, index);
+    return ListenableBuilder(
+      listenable: _allMissionsListenable,
+      builder: (context, _) {
+        return ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: widget.learningPath.milestones.length,
+          itemBuilder: (context, index) {
+            final milestone = widget.learningPath.milestones[index];
+            return _buildMilestoneCard(milestone, index);
+          },
+        );
       },
     );
   }
 
   Widget _buildConceptsTab() {
-    // Group concepts by status
-    final completedConcepts =
-        widget.learningPath.concepts.where((c) => c.isCompleted).toList();
-    final inProgressConcepts = widget.learningPath.concepts
-        .where((c) => !c.isCompleted && c.completionPercentage > 0)
-        .toList();
-    final remainingConcepts = widget.learningPath.concepts
-        .where((c) => !c.isCompleted && c.completionPercentage == 0)
-        .toList();
+    return ListenableBuilder(
+      listenable: _allMissionsListenable,
+      builder: (context, _) {
+        final completedConcepts =
+            widget.learningPath.concepts.where((c) => c.isCompleted).toList();
+        final inProgressConcepts = widget.learningPath.concepts
+            .where((c) => !c.isCompleted && c.completionPercentage > 0)
+            .toList();
+        final remainingConcepts = widget.learningPath.concepts.where((c) {
+          return !c.isCompleted && c.completionPercentage == 0;
+        }).toList();
 
-    return SingleChildScrollView(
-      child: Column(
-        children: [
-          if (completedConcepts.isNotEmpty)
-            _buildConceptSection(
-              'Completed',
-              completedConcepts,
-              Colors.green,
-              '✅',
-            ),
-          if (inProgressConcepts.isNotEmpty)
-            _buildConceptSection(
-              'In Progress',
-              inProgressConcepts,
-              Colors.orange,
-              '⏳',
-            ),
-          if (remainingConcepts.isNotEmpty)
-            _buildConceptSection(
-              'Not Started',
-              remainingConcepts,
-              Colors.grey,
-              '🔒',
-            ),
-        ],
-      ),
+        return SingleChildScrollView(
+          child: Column(
+            children: [
+              if (completedConcepts.isNotEmpty)
+                _buildConceptSection(
+                  'Completed',
+                  completedConcepts,
+                  Colors.green,
+                  '✅',
+                ),
+              if (inProgressConcepts.isNotEmpty)
+                _buildConceptSection(
+                  'In Progress',
+                  inProgressConcepts,
+                  Colors.orange,
+                  '⏳',
+                ),
+              if (remainingConcepts.isNotEmpty)
+                _buildConceptSection(
+                  'Not Started',
+                  remainingConcepts,
+                  Colors.grey,
+                  '🔒',
+                ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -339,7 +382,8 @@ class _LearningPathScreenState extends State<LearningPathScreen>
                   color: color.withValues(alpha: .2),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 child: Text(
                   '${concepts.length}',
                   style: TextStyle(
@@ -407,15 +451,17 @@ class _LearningPathScreenState extends State<LearningPathScreen>
                     children: [
                       Text(
                         concept.name,
-                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+                        style:
+                            Theme.of(context).textTheme.titleSmall?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
                       ),
                       Text(
                         concept.category,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.grey[600],
-                            ),
+                        style:
+                            Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: Colors.grey[600],
+                                ),
                       ),
                     ],
                   ),
@@ -423,10 +469,11 @@ class _LearningPathScreenState extends State<LearningPathScreen>
                 if (isLocked)
                   const Icon(Icons.lock, size: 20, color: Colors.grey)
                 else if (concept.isCompleted)
-                  const Icon(Icons.check_circle, size: 20, color: Colors.green)
+                  const Icon(Icons.check_circle,
+                      size: 20, color: Colors.green)
                 else
                   Text(
-                    '${concept.completionPercentage}%',
+                    '${(concept.completionPercentage * 100).round()}%',
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       color: AppTheme.primaryColor,
@@ -438,7 +485,7 @@ class _LearningPathScreenState extends State<LearningPathScreen>
             ClipRRect(
               borderRadius: BorderRadius.circular(4),
               child: LinearProgressIndicator(
-                value: concept.completionPercentage / 100,
+                value: concept.completionPercentage,
                 minHeight: 6,
                 backgroundColor: Colors.grey.withValues(alpha: 0.2),
                 valueColor: AlwaysStoppedAnimation<Color>(
@@ -453,8 +500,12 @@ class _LearningPathScreenState extends State<LearningPathScreen>
   }
 
   Widget _buildMilestoneCard(LearningPathMilestone milestone, int index) {
-    final isLocked = !milestone.isUnlocked;
-    final relatedConcepts = milestone.concepts ; 
+    final isLocked = index == 0
+      ? false
+      : !widget.learningPath.milestones[index - 1].isCompleted;
+    final relatedConcepts = widget.learningPath.concepts
+        .where((c) => milestone.conceptIds.contains(c.id))
+        .toList();
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -502,10 +553,12 @@ class _LearningPathScreenState extends State<LearningPathScreen>
                         children: [
                           Text(
                             'Milestone ${index + 1}',
-                            style:
-                                Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: Colors.grey[600],
-                                    ),
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodySmall
+                                ?.copyWith(
+                                  color: Colors.grey[600],
+                                ),
                           ),
                           Text(
                             milestone.title,
@@ -532,7 +585,7 @@ class _LearningPathScreenState extends State<LearningPathScreen>
                         ),
                         padding: const EdgeInsets.all(8),
                         child: Text(
-                          '${milestone.completionPercentage}%',
+                          '${(milestone.completionPercentage *100).round()}%',
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             color: AppTheme.primaryColor,
@@ -567,7 +620,7 @@ class _LearningPathScreenState extends State<LearningPathScreen>
                           ),
                     ),
                     Text(
-                      '${milestone.completionPercentage}%',
+                      '${(milestone.completionPercentage * 100).round()}%',
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         color: AppTheme.primaryColor,
@@ -579,7 +632,7 @@ class _LearningPathScreenState extends State<LearningPathScreen>
                 ClipRRect(
                   borderRadius: BorderRadius.circular(4),
                   child: LinearProgressIndicator(
-                    value: milestone.completionPercentage / 100,
+                    value: milestone.completionPercentage,
                     minHeight: 8,
                     backgroundColor: Colors.grey.withValues(alpha: 0.2),
                     valueColor: AlwaysStoppedAnimation<Color>(
@@ -650,7 +703,6 @@ class _LearningPathScreenState extends State<LearningPathScreen>
     );
   }
 
-// TODO: thabbet fi el condition  c.completionPercentage != 0 &&
   Widget _buildNextStepCard() {
     final nextConcept = widget.learningPath.concepts.firstWhere(
       (c) =>
