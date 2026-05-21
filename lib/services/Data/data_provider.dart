@@ -3,7 +3,9 @@ import 'dart:math';
 import 'package:appwrite/appwrite.dart';
 import 'package:flutter/material.dart' hide Row;
 import 'package:appwrite/models.dart';
-import 'package:pfe_test/models/learning_path_model.dart';
+import 'package:pfe_test/models/LearningPath/concept.dart';
+import 'package:pfe_test/models/LearningPath/learning_path.dart';
+import 'package:pfe_test/models/LearningPath/milestone.dart';
 import 'package:pfe_test/models/mission_model.dart';
 import 'package:pfe_test/models/user_info_model.dart';
 import 'package:pfe_test/services/Auth/auth_provider.dart';
@@ -265,14 +267,17 @@ class DataProvider extends ChangeNotifier {
         await getuserGoals();
       }
       try {
-        path = await getLearningPath();
+        // AppwritecloudfunctionsService.createLearningPath(id: authProvider.currentUser!.id , progLang: "Java",desc: "Java Tutoriel");
+        path = await fetchLearningPath(authProvider.currentUser!.id);
       } on AppwriteException catch (e) {
         if (e.code == 404) {
           try {
             dataRepository.getRow(
                 tableId: 'user_goals', rowId: authProvider.currentUser!.id);
             await AppwritecloudfunctionsService.createLearningPath(
-                id: authProvider.currentUser!.id, progLang: 'Html', desc: '');
+                id: authProvider.currentUser!.id,
+                progLang: 'Go',
+                desc: 'learn go from scratch');
           } on AppwriteException catch (e) {
             if (e.code == 404) {
               isFirstLogin = true;
@@ -287,40 +292,6 @@ class DataProvider extends ChangeNotifier {
       }
     } catch (e) {
       debugPrint("Error fi getUserInfo $e");
-      rethrow;
-    }
-  }
-
-  Future<LearningPath> getLearningPath() async {
-    List<LearningPathMilestone> milestones = [];
-    List<Concept> concepts = [];
-    try {
-      var row = await dataRepository.getRow(
-          tableId: "learnig_paths",
-          rowId: authProvider.currentUser!.id,
-          queries: [
-            Query.select([
-              "*",
-              "milestones.*",
-              "milestones.concepts.*",
-              "milestones.concepts.missionrelation.*"
-            ])
-          ]);
-
-      final Map<String, dynamic> parsedData = row.data;
-      milestones = (parsedData['milestones'] as List<dynamic>?)
-              ?.map((e) =>
-                  LearningPathMilestone.fromJson(e as Map<String, dynamic>))
-              .toList() ??
-          [];
-      for (var m in milestones) {
-        if (m.concepts.isNotEmpty) {
-          concepts.addAll(m.concepts);
-        }
-      }
-      return LearningPath.fromJson(parsedData, milestones, concepts);
-    } catch (e) {
-      debugPrint("Error fetching learning path : $e");
       rethrow;
     }
   }
@@ -513,13 +484,42 @@ class DataProvider extends ChangeNotifier {
       int missionPoints = 0;
       for (int i = 0; i < progress.missions.length; i++) {
         if (progress.missions[i].id == id) {
-          progress.missions[i].isCompleted = true;
+          progress.missions[i].isCompleted.value = true;
           missionDiffculty = progress.missions[i].difficulty;
           missionNb = i;
         }
       }
       await updateRate(missionDiffculty, missionPoints, rate);
       await checkbadges(missionNb!);
+      notifyListeners();
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> updateMissionStatusLP(String id, double rate) async {
+    try {
+      await dataRepository.updateRow(
+        tableId: "missions",
+        rowId: id,
+        data: {'isCompleted': true, "rate": rate},
+      );
+      progress.nbMissions += 1;
+      await dataRepository.updateRow(
+          tableId: "user_profiles",
+          rowId: authProvider.currentUser!.id,
+          data: {'nbMission': progress.nbMissions});
+
+      int missionDiffculty = 0;
+      int missionPoints = 0;
+      for (int i = 0; i < progress.missions.length; i++) {
+        if (progress.missions[i].id == id) {
+          progress.missions[i].isCompleted.value = true;
+          missionDiffculty = progress.missions[i].difficulty;
+        }
+      }
+      await updateRate(missionDiffculty, missionPoints, rate);
+
       notifyListeners();
     } catch (e) {
       rethrow;
@@ -600,7 +600,7 @@ class DataProvider extends ChangeNotifier {
           (progress.badgesProgress[missionType]! + 1);
       int missionsCompletedToday = 0;
       for (int i = 0; i < progress.missions.length; i++) {
-        if (progress.missions[i].isCompleted) {
+        if (progress.missions[i].isCompleted.value) {
           missionsCompletedToday += 1;
         }
       }
@@ -804,5 +804,160 @@ class DataProvider extends ChangeNotifier {
     } catch (e) {
       rethrow;
     }
+  }
+
+  // learning path
+  Future<LearningPath?> fetchLearningPath(String learningPathId) async {
+    try {
+      final lpRow = await dataRepository.getRow(
+        tableId: "learnig_paths",
+        rowId: learningPathId,
+      );
+
+      final results = await Future.wait([
+        dataRepository.getRows(
+          tableId: "learnig_path_concepts",
+          queries: [Query.equal('learningPathId', learningPathId)],
+        ),
+        dataRepository.getRows(
+          tableId: "learnig_path_milestones",
+          queries: [Query.equal('learningPathId', learningPathId)],
+        ),
+        dataRepository.getRows(
+          tableId: "learning_path_missions",
+          queries: [Query.equal('learningPathId', learningPathId)],
+        ),
+      ]);
+
+      print("0");
+
+      final missions = (results[2]).rows.map((doc) {
+        print(doc.data["title"]);
+        final MissionType type = MissionType.values
+            .firstWhere((e) => e.name.contains(doc.data["type"]));
+        print(type.name);
+        switch (type) {
+          case MissionType.complete:
+            print("ok");
+            return Mission.completeMission(doc);
+
+          case MissionType.debug:
+            return Mission.debugMission(doc);
+
+          case MissionType.multipleChoice:
+            return Mission.multipleChoice(doc);
+
+          case MissionType.ordering:
+            return Mission.ordering(doc);
+
+          case MissionType.singleChoice:
+            return Mission.singleChoice(doc);
+
+          case MissionType.test:
+            return Mission.testMission(doc);
+        }
+      }).toList();
+      print("Load sayyer ");
+      final concepts = (results[0])
+          .rows
+          .map((d) => Concept.fromJson(d.data, missions))
+          .toList();
+
+      print("Concept sayyer");
+
+      final milestones = (results[1])
+          .rows
+          .map((d) => LearningPathMilestone.fromJson(d.data, concepts))
+          .toList();
+
+      print("milestones sayyer");
+
+      print("Nb missions ${missions.length}");
+
+      return LearningPath(
+          id: lpRow.$id,
+          language: lpRow.data["language"],
+          milestones: milestones,
+          concepts: concepts,
+          missions: missions,
+
+          startedAt: DateTime.now(),
+          completedAt: DateTime.now(),
+          currentLevel: lpRow.data["currentLevel"]);
+    } catch (e) {
+      print('Failed to fetch LearningPath: $e');
+      return null;
+    }
+  }
+
+  Future<void> saveLearningPath() async {
+    try {
+      final lpDoc = await _saveLearningPathRow(path!);
+      final learningPathId = lpDoc.$id;
+
+      await Future.wait([
+        ...path!.concepts.map((c) => _saveConcept(c, learningPathId)),
+        ...path!.milestones.map((m) => _saveMilestone(m, learningPathId)),
+        ...path!.missions.map((ms) => _saveMission(ms, learningPathId)),
+      ]);
+      await fetchLearningPath(path!.id);
+      print('LearningPath saved successfully (id: $learningPathId)');
+      notifyListeners();
+    } catch (e) {
+      print('Failed to save LearningPath: $e');
+      rethrow;
+    }
+  }
+
+  Future<Row> _saveLearningPathRow(LearningPath path) async {
+    return dataRepository.updateRow(
+      tableId: "learnig_paths",
+      rowId: path.id,
+      data: {
+        'totalConceptsCompleted': path.totalConceptsCompleted,
+        'overallProgressPercentage': path.overallProgressPercentage,
+        'currentLevel': path.currentLevel,
+        'startedAt': path.startedAt.toIso8601String(),
+        'completedAt': path.completedAt?.toIso8601String(),
+      },
+    );
+  }
+
+  Future<void> _saveConcept(Concept concept, String learningPathId) async {
+    await dataRepository.updateRow(
+      tableId: "learnig_path_concepts",
+      rowId: concept.id,
+      data: {
+        'isCompleted': concept.isCompleted,
+        'completionPercentage': concept.completionPercentage,
+        'startedAt': concept.startedAt?.toIso8601String(),
+        'completedAt': concept.completedAt?.toIso8601String(),
+      },
+    );
+  }
+
+  Future<void> _saveMilestone(
+      LearningPathMilestone milestone, String learningPathId) async {
+    await dataRepository.updateRow(
+      rowId: milestone.id,
+      tableId: 'learnig_path_milestones',
+      data: {
+        'isUnlocked': milestone.isUnlocked,
+        'isCompleted': milestone.isCompleted,
+        'completionPercentage': milestone.completionPercentage,
+        'completedAt': milestone.completedAt?.toIso8601String(),
+      },
+    );
+  }
+
+  Future<void> _saveMission(Mission mission, String learningPathId) async {
+    await dataRepository.updateRow(
+      tableId: "learning_path_missions",
+      rowId: mission.id,
+      data: {
+        'isCompleted': mission.isCompleted,
+        'Surrendered': mission.isSurrendered,
+      },
+    );
   }
 }
