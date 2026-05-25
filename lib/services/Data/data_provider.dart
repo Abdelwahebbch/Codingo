@@ -9,6 +9,7 @@ import 'package:pfe_test/models/LearningPath/milestone.dart';
 import 'package:pfe_test/models/mission_model.dart';
 import 'package:pfe_test/models/user_info_model.dart';
 import 'package:pfe_test/services/Auth/auth_provider.dart';
+import 'package:pfe_test/services/CloudFunctions/appwrite_cloud_functions_service.dart';
 import 'package:pfe_test/services/Data/data_repository.dart';
 
 class DataProvider extends ChangeNotifier {
@@ -290,6 +291,10 @@ class DataProvider extends ChangeNotifier {
       } on AppwriteException catch (e) {
         if (e.code != 404) rethrow;
         //TODO Call for creating LP
+        AppwritecloudfunctionsService.createLearningPath(
+            id: authProvider.currentUser!.id,
+            desc:userGoals!["prompt"] ??"",
+            progLang: progress.progLanguage);
         debugPrint('DataProvider.getUserInfo - no learning path yet');
       }
     } catch (e) {
@@ -554,7 +559,8 @@ class DataProvider extends ChangeNotifier {
       }
 
       if (progress.badgesProgress['debug']! >= 10) await award('Bug Hunter');
-      if (progress.nbMissionCompletedWithoutHints >= 10) await award('Code Ninja');
+      if (progress.nbMissionCompletedWithoutHints >= 10)
+        await award('Code Ninja');
       if (progress.badgesProgress['test']! >= 20) await award('Test Master');
       if (missionsCompletedToday >= 5) await award('Fast Learner');
       if (progress.badgesProgress['ordering']! >= 10) await award('Architect');
@@ -692,8 +698,6 @@ class DataProvider extends ChangeNotifier {
       rethrow;
     }
   }
-
-
 
   Future<LearningPath?> fetchLearningPath(String learningPathId) async {
     try {
