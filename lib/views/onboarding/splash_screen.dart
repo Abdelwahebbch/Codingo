@@ -5,6 +5,7 @@ import 'package:pfe_test/services/Data/data_provider.dart';
 import 'package:pfe_test/theme/app_theme.dart';
 import 'package:pfe_test/views/auth/login_screen.dart';
 import 'package:pfe_test/views/dashboard/dashboard_screen.dart';
+import 'package:pfe_test/views/onboarding/onboarding_screen.dart';
 import 'package:provider/provider.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -65,10 +66,7 @@ class _SplashScreenState extends State<SplashScreen>
 
     if (!mounted) return;
 
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => const DashboardScreen()),
-    );
+   _navigateAfterLoad(context, dataProvider);
   }
 
   /// Returns a Future that completes as soon as [DataProvider.isLoading]
@@ -89,7 +87,19 @@ class _SplashScreenState extends State<SplashScreen>
     }
     return completer.future;
   }
-
+void _navigateAfterLoad(BuildContext context, DataProvider dataProvider) {
+  if (dataProvider.isFirstLogin) {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const OnboardingScreen()),
+    );
+  } else {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const DashboardScreen()),
+    );
+  }
+}
   @override
   void dispose() {
     _controller.dispose();
