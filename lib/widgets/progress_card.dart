@@ -18,7 +18,7 @@ class ProgressCard extends StatelessWidget {
       onTap: () {
         try {
           final learningPath = dataservice.path;
-
+          if (learningPath == null) throw Exception("No Learning Path !");
           Navigator.push(
             context,
             MaterialPageRoute(
