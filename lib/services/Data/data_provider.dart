@@ -9,7 +9,6 @@ import 'package:pfe_test/models/LearningPath/milestone.dart';
 import 'package:pfe_test/models/mission_model.dart';
 import 'package:pfe_test/models/user_info_model.dart';
 import 'package:pfe_test/services/Auth/auth_provider.dart';
-import 'package:pfe_test/services/CloudFunctions/appwrite_cloud_functions_service.dart';
 import 'package:pfe_test/services/Data/data_repository.dart';
 
 class DataProvider extends ChangeNotifier {
@@ -141,34 +140,7 @@ Future<void> init() async {
         elo: 0,
       );
 
-  void updateIsFirstLogin() async {
-    if (isFirstLogin) {
-      try {
-        await dataRepository.createRow(
-          tableId: 'user_profiles',
-          rowId: _authProvider.currentUser!.id,
-          data: {
-            'username': _authProvider.currentUser!.name,
-            'isFirstLogin': false,
-            'progLanguage': progress.progLanguage,
-            'experience': progress.experience,
-            'totalPoints': progress.totalPoints,
-            'difficulty': progress.difficultySelected,
-            'badgesProgress': jsonEncode(progress.badgesProgress),
-            'earnedBadges': progress.earnedBadges,
-            'nbMission': 0,
-            'totalFailures': 0,
-            'totalAIQuestions': 0,
-            'elo': 0,
-          },
-        );
-        isFirstLogin = false;
-        notifyListeners();
-      } catch (e) {
-        debugPrint('DataProvider.updateIsFirstLogin - error: $e');
-      }
-    }
-  }
+
 
   Future<void> completeOnboarding(
     Map<String, String> data,
@@ -180,7 +152,6 @@ Future<void> init() async {
       userGoals = data;
       print(progress.progLanguage);
       print(data['journey'].toString());
-      updateIsFirstLogin();
       if (startDate != null && endDate != null) {
         await dataRepository.createRow(
           tableId: 'user_goals',
@@ -240,136 +211,119 @@ Future<void> init() async {
     }
   }
 
-  Future<void> getUserInfo() async {
+Future<void> getUserInfo() async {
+  try {
+    Row? row;
     try {
-      Row? row;
-      try {
-        row = await dataRepository.getRow(
-          tableId: 'user_profiles',
-          rowId: _authProvider.currentUser!.id,
-        );
-      } on AppwriteException catch (e) {
-        if (e.code == 404) {
-          debugPrint('DataProvider.getUserInfo - profile not found, first login');
-          isFirstLogin = true;
-          progress = UserInfo(
-            progLanguage: 'not selected',
-            username: _authProvider.currentUser!.name,
-            experience: 500,
-            totalPoints: 0,
-            earnedBadges: [],
-            bio: '',
-            imageId: '',
-            email: _authProvider.currentUser!.email,
-            rank: 0,
-            difficultySelected: 'Intermediate',
-            nbMissions: 0,
-            missions: [],
-            badgesProgress: {
-              'debug': 0,
-              'complete': 0,
-              'multipleChoice': 0,
-              'ordering': 0,
-              'singleChoice': 0,
-              'test': 0,
-            },
-            showingBadges: [],
-            nbMissionCompletedWithoutHints: 0,
-            totalFailures: 0,
-            totalAIQuestions: 0,
-            elo: 0,
-          );
-          await dataRepository.createRow(
-            rowId: _authProvider.currentUser!.id,
-            tableId: 'user_profiles',
-            data: {
-              'progLanguage': 'not selected',
-              'username': _authProvider.currentUser!.name,
-              'experience': 500,
-              'totalPoints': 0,
-              'earnedBadges': [],
-              'bio': '',
-              'imageId': '',
-              'difficulty': 'Intermediate',
-              'nbMission': 0,
-              'badgesProgress': jsonEncode({
-                'debug': 0,
-                'complete': 0,
-                'multipleChoice': 0,
-                'ordering': 0,
-                'singleChoice': 0,
-                'test': 0,
-              }),
-              'nbMissionCompletedWithoutHints': 0,
-              'totalFailures': 0,
-              'totalAIQuestions': 0,
-              'elo': 0,
-            },
-          );
-          notifyListeners();
-          return;
-        } else {
-          rethrow;
-        }
-      }
-
-      final int x = await getRank();
-      isFirstLogin = row.data['isFirstLogin'] ?? true;
-      progress = UserInfo(
-        progLanguage: row.data['progLanguage'] ?? 'not selected',
-        username: _authProvider.currentUser!.name,
-        experience: row.data['experience'],
-        totalPoints: row.data['totalPoints'],
-        earnedBadges: List<String>.from(row.data['earnedBadges'] ?? []),
-        bio: row.data['bio'],
-        imageId: row.data['imageId'],
-        email: _authProvider.currentUser!.email,
-        rank: x,
-        difficultySelected: row.data['difficulty'] ?? 'Intermediate',
-        nbMissions: row.data['nbMission'] ?? 0,
-        missions: await getMissions(),
-        badgesProgress: row.data['badgesProgress'] != null
-            ? jsonDecode(row.data['badgesProgress'])
-            : {},
-        showingBadges: [],
-        nbMissionCompletedWithoutHints:
-            row.data['nbMissionCompletedWithoutHints'] ?? 0,
-        totalFailures: row.data['totalFailures'] ?? 0,
-        totalAIQuestions: row.data['totalAIQuestions'] ?? 0,
-        elo: row.data['elo'],
+      row = await dataRepository.getRow(
+        tableId: 'user_profiles',
+        rowId: _authProvider.currentUser!.id,
       );
-
-      if (!isFirstLogin) {
-        await getuserGoals();
+    } on AppwriteException catch (e) {
+      if (e.code == 404) {
+        debugPrint('DataProvider.getUserInfo - no profile, first login');
+        isFirstLogin = true;
+        progress = UserInfo(
+          progLanguage: 'not selected',
+          username: _authProvider.currentUser!.name,
+          experience: 500,
+          totalPoints: 0,
+          earnedBadges: [],
+          bio: '',
+          imageId: '',
+          email: _authProvider.currentUser!.email,
+          rank: 0,
+          difficultySelected: 'Intermediate',
+          nbMissions: 0,
+          missions: [],
+          badgesProgress: {
+            'debug': 0, 'complete': 0, 'multipleChoice': 0,
+            'ordering': 0, 'singleChoice': 0, 'test': 0,
+          },
+          showingBadges: [],
+          nbMissionCompletedWithoutHints: 0,
+          totalFailures: 0,
+          totalAIQuestions: 0,
+          elo: 0,
+        );
+        await dataRepository.createRow(
+          rowId: _authProvider.currentUser!.id,
+          tableId: 'user_profiles',
+          data: {
+            'progLanguage': 'not selected',
+            'username': _authProvider.currentUser!.name,
+            'experience': 500,
+            'totalPoints': 0,
+            'earnedBadges': [],
+            'bio': '',
+            'imageId': '',
+            'difficulty': 'Intermediate',
+            'nbMission': 0,
+            'badgesProgress': jsonEncode({
+              'debug': 0, 'complete': 0, 'multipleChoice': 0,
+              'ordering': 0, 'singleChoice': 0, 'test': 0,
+            }),
+            'nbMissionCompletedWithoutHints': 0,
+            'totalFailures': 0,
+            'totalAIQuestions': 0,
+            'elo': 0,
+          },
+        );
+        return; 
       }
-
-      try {
-        path = await fetchLearningPath(_authProvider.currentUser!.id);
-      } on AppwriteException catch (e) {
-        if (e.code == 404) {
-          try {
-            dataRepository.getRow(
-              tableId: 'user_goals',
-              rowId: _authProvider.currentUser!.id,
-            );
-      
-          } on AppwriteException catch (e) {
-            if (e.code == 404) {
-              isFirstLogin = true;
-            }
-            debugPrint('DataProvider.getUserInfo - user_goals not found, going to onboarding');
-          }
-        } else {
-          rethrow;
-        }
-      } finally {
-        notifyListeners();
-      }
-    } catch (e) {
-      debugPrint('DataProvider.getUserInfo - error: $e');
       rethrow;
     }
+
+   
+    final int rank = await getRank();
+    isFirstLogin = row.data['isFirstLogin'] ?? true;
+    progress = UserInfo(
+      progLanguage: row.data['progLanguage'] ?? 'not selected',
+      username: _authProvider.currentUser!.name,
+      experience: row.data['experience'],
+      totalPoints: row.data['totalPoints'],
+      earnedBadges: List<String>.from(row.data['earnedBadges'] ?? []),
+      bio: row.data['bio'],
+      imageId: row.data['imageId'],
+      email: _authProvider.currentUser!.email,
+      rank: rank,
+      difficultySelected: row.data['difficulty'] ?? 'Intermediate',
+      nbMissions: row.data['nbMission'] ?? 0,
+      missions: await getMissions(),
+      badgesProgress: row.data['badgesProgress'] != null
+          ? jsonDecode(row.data['badgesProgress'])
+          : {},
+      showingBadges: [],
+      nbMissionCompletedWithoutHints:
+          row.data['nbMissionCompletedWithoutHints'] ?? 0,
+      totalFailures: row.data['totalFailures'] ?? 0,
+      totalAIQuestions: row.data['totalAIQuestions'] ?? 0,
+      elo: row.data['elo'],
+    ); 
+    try {
+      await getuserGoals(); 
+    } on AppwriteException catch (e) {
+      if (e.code == 404) {
+        debugPrint('DataProvider.getUserInfo - no user_goals, sending to onboarding');
+        isFirstLogin = true;
+        return; 
+      }
+      rethrow;
+    }
+    try {
+      path = await fetchLearningPath(_authProvider.currentUser!.id);
+    } on AppwriteException catch (e) {
+      if (e.code != 404) rethrow;
+      //TODO Call for creating LP
+      debugPrint('DataProvider.getUserInfo - no learning path yet');
+    }
+  } catch (e) {
+    debugPrint('DataProvider.getUserInfo - error: $e');
+    rethrow;
+  } finally {
+    notifyListeners();
   }
+}
 
   Future<void> getuserGoals() async {
     final row = await dataRepository.getRow(
