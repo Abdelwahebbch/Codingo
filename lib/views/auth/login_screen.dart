@@ -4,6 +4,7 @@ import 'package:pfe_test/services/Auth/auth_provider.dart';
 import 'package:pfe_test/services/Data/data_provider.dart';
 import 'package:pfe_test/theme/app_theme.dart';
 import 'package:pfe_test/views/dashboard/dashboard_screen.dart';
+import 'package:pfe_test/views/onboarding/onboarding_screen.dart';
 import 'package:pfe_test/widgets/google_sign_in_button.dart';
 import 'package:provider/provider.dart';
 import 'signup_screen.dart';
@@ -48,38 +49,22 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final dataProvider = Provider.of<DataProvider>(context, listen: false);
-
-      // 1. Sign in — this calls AuthProvider.init() internally, which
-      //    notifies DataProvider's listener to start loading user data.
       await authProvider.signIn(
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
-
       if (!mounted) return;
-
-      // 2. Wait for DataProvider to finish loading (it started automatically
-      //    via its AuthProvider listener — no manual reload() needed).
       if (dataProvider.isLoading) {
         await _waitForData(dataProvider);
       }
-
       if (!mounted) return;
-
-      // 3. Navigate to the dashboard, clearing the login screen from the stack.
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const DashboardScreen()),
-      );
+      _navigateAfterLoad(context, dataProvider);
     } catch (e) {
       if (mounted) _showErrorDialog('$e');
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
   }
-
-  /// Waits for [DataProvider.isLoading] to become false using a listener,
-  /// so there is no polling / busy-wait.
   Future<void> _waitForData(DataProvider dataProvider) {
     final completer = Completer<void>();
     void listener() {
@@ -89,12 +74,25 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     }
     dataProvider.addListener(listener);
-    // Guard: already done before we added the listener.
     if (!dataProvider.isLoading && !completer.isCompleted) {
       dataProvider.removeListener(listener);
       completer.complete();
     }
     return completer.future;
+  }
+
+  void _navigateAfterLoad(BuildContext context, DataProvider dataProvider) {
+    if (dataProvider.isFirstLogin) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const OnboardingScreen()),
+      );
+    } else {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const DashboardScreen()),
+      );
+    }
   }
 
   @override
