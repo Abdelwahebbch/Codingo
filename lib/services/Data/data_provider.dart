@@ -15,54 +15,85 @@ import 'package:pfe_test/services/Data/data_repository.dart';
 class DataProvider extends ChangeNotifier {
   final DataRepository dataRepository;
 
-  AuthProvider authProvider;
-  bool _isLoading = false;
+  // Private - access via getter so the field cannot be accidentally replaced.
+  final AuthProvider _authProvider;
+  AuthProvider get authProvider => _authProvider;
 
-  UserInfo progress = UserInfo(
-    progLanguage: "not selected",
-    username: "",
-    experience: 0,
-    totalPoints: 0,
-    earnedBadges: [],
-    bio: "",
-    imageId: "",
-    email: "",
-    rank: 0,
-    difficultySelected: "Intermediate",
-    nbMissions: 0,
-    missions: [],
-    badgesProgress: {
-      'debug': 0,
-      'complete': 0,
-      'multipleChoice': 0,
-      'ordering': 0,
-      'singleChoice': 0,
-      'test': 0
-    },
-    showingBadges: [],
-    nbMissionCompletedWithoutHints: 0,
-    totalFailures: 0,
-    totalAIQuestions: 0,
-    elo: 0,
-  );
+  bool _isLoading = false;
+  bool get isLoading => _isLoading;
+
+  AuthStatus _status = AuthStatus.uninitialized;
+  AuthStatus get status => _status;
+
+  // ─── User data ────────────────────────────────────────────────────────────
+  UserInfo progress = _emptyUserInfo();
   bool isFirstLogin = false;
   LearningPath? path;
   Map<String, dynamic>? userGoals;
-  bool get isLoading => _isLoading;
+  // ─────────────────────────────────────────────────────────────────────────
 
-  DataProvider({required this.dataRepository, required this.authProvider});
-  Future<void> init() async {
-    _isLoading = true;
-    notifyListeners();
-    try {
-      await getUserInfo();
-    } catch (e) {
-      print('Error initializing DataProvider: $e');
-    } finally {
-      _isLoading = false;
-      notifyListeners();
+  DataProvider({
+    required this.dataRepository,
+    required AuthProvider authProvider,
+  }) : _authProvider = authProvider {
+    // ─── React to every future auth-state change ──────────────────────────
+    _authProvider.addListener(_onAuthChanged);
+
+    // ─── Handle the case where AuthProvider already finished init()
+    //     before this listener was attached (possible with fast storage).
+    if (_authProvider.status == AuthStatus.authenticated) {
+      // Use microtask so we don't call init() inside a constructor body
+      // while the provider tree is still being built.
+      Future.microtask(init);
+    }
+    // ─────────────────────────────────────────────────────────────────────
+  }
+
+  // ─── Auth listener ───────────────────────────────────────────────────────
+  void _onAuthChanged() {
+    switch (_authProvider.status) {
+      case AuthStatus.authenticated:
+        // A user just signed in (or init confirmed an existing session).
+        init();
+        break;
+      case AuthStatus.unauthenticated:
+        // User signed out - wipe local data so nothing leaks between sessions.
+        _clearData();
+        break;
+      case AuthStatus.uninitialized:
+        // Still checking - nothing to do yet.
+        break;
     }
   }
+
+  @override
+  void dispose() {
+    // Always remove the listener to prevent memory leaks.
+    _authProvider.removeListener(_onAuthChanged);
+    super.dispose();
+  }
+  // ─────────────────────────────────────────────────────────────────────────
+
+bool _isInitializing = false; // add this field
+
+Future<void> init() async {
+  if (_isInitializing) return; // ← already running, skip
+  _isInitializing = true;
+  _isLoading = true;
+  notifyListeners();
+  try {
+    await getUserInfo();
+    _status = AuthStatus.authenticated;
+    notifyListeners();
+  } catch (e) {
+    debugPrint('DataProvider.init - error: $e');
+    _status = AuthStatus.unauthenticated;
+  } finally {
+    _isLoading = false;
+    _isInitializing = false;
+    notifyListeners();
+  }
+}
 
   Future<void> reload() async {
     _isLoading = true;
@@ -70,15 +101,54 @@ class DataProvider extends ChangeNotifier {
     await init();
   }
 
+  /// Wipe all user-specific state when the session ends.
+  void _clearData() {
+    progress = _emptyUserInfo();
+    path = null;
+    userGoals = null;
+    isFirstLogin = false;
+    _status = AuthStatus.unauthenticated;
+    notifyListeners();
+  }
+
+  // ─── Static helper so _emptyUserInfo can be called both in the field
+  //     initializer and in _clearData() without repeating the literal.
+  static UserInfo _emptyUserInfo() => UserInfo(
+        progLanguage: 'not selected',
+        username: '',
+        experience: 0,
+        totalPoints: 0,
+        earnedBadges: [],
+        bio: '',
+        imageId: '',
+        email: '',
+        rank: 0,
+        difficultySelected: 'Intermediate',
+        nbMissions: 0,
+        missions: [],
+        badgesProgress: {
+          'debug': 0,
+          'complete': 0,
+          'multipleChoice': 0,
+          'ordering': 0,
+          'singleChoice': 0,
+          'test': 0,
+        },
+        showingBadges: [],
+        nbMissionCompletedWithoutHints: 0,
+        totalFailures: 0,
+        totalAIQuestions: 0,
+        elo: 0,
+      );
+
   void updateIsFirstLogin() async {
     if (isFirstLogin) {
       try {
-        // On CRÉE le document en base de données puisqu'il n'existe pas encore
         await dataRepository.createRow(
-          tableId: "user_profiles",
-          rowId: authProvider.currentUser!.id,
+          tableId: 'user_profiles',
+          rowId: _authProvider.currentUser!.id,
           data: {
-            'username': authProvider.currentUser!.name,
+            'username': _authProvider.currentUser!.name,
             'isFirstLogin': false,
             'progLanguage': progress.progLanguage,
             'experience': progress.experience,
@@ -95,73 +165,77 @@ class DataProvider extends ChangeNotifier {
         isFirstLogin = false;
         notifyListeners();
       } catch (e) {
-        print("Erreur lors de la création du profil utilisateur: $e");
+        debugPrint('DataProvider.updateIsFirstLogin - error: $e');
       }
     }
   }
 
-  Future<void> completeOnboarding(Map<String, String> data, bool pathCreation,
-      DateTime? startDate, DateTime? endDate) async {
+  Future<void> completeOnboarding(
+    Map<String, String> data,
+    bool pathCreation,
+    DateTime? startDate,
+    DateTime? endDate,
+  ) async {
     try {
       userGoals = data;
       print(progress.progLanguage);
-      print(data["journey"].toString());
+      print(data['journey'].toString());
       updateIsFirstLogin();
       if (startDate != null && endDate != null) {
         await dataRepository.createRow(
-            tableId: "user_goals",
-            rowId: authProvider.currentUser!.id,
-            data: {
-              "username": authProvider.currentUser!.name,
-              "prompt": jsonEncode(data),
-              "startDate": startDate.toString(),
-              "endDate": endDate.toString()
-            });
+          tableId: 'user_goals',
+          rowId: _authProvider.currentUser!.id,
+          data: {
+            'username': _authProvider.currentUser!.name,
+            'prompt': jsonEncode(data),
+            'startDate': startDate.toString(),
+            'endDate': endDate.toString(),
+          },
+        );
       } else {
         await dataRepository.createRow(
-            tableId: "user_goals",
-            rowId: authProvider.currentUser!.id,
-            data: {
-              "username": authProvider.currentUser!.name,
-              "prompt": jsonEncode(data)
-            });
+          tableId: 'user_goals',
+          rowId: _authProvider.currentUser!.id,
+          data: {
+            'username': _authProvider.currentUser!.name,
+            'prompt': jsonEncode(data),
+          },
+        );
       }
 
-      var rows =
-          await dataRepository.getRows(tableId: "mock_mission", queries: [
-        Query.equal("user_category", data["journey"].toString()),
-        Query.equal("language", progress.progLanguage),
-      ]);
+      final rows = await dataRepository.getRows(
+        tableId: 'mock_mission',
+        queries: [
+          Query.equal('user_category', data['journey'].toString()),
+          Query.equal('language', progress.progLanguage),
+        ],
+      );
 
-      for (var row in rows.rows) {
-        await dataRepository
-            .createRow(tableId: "missions", rowId: ID.unique(), data: {
-          "user_id": authProvider.currentUser!.id,
-          "title": row.data["title"],
-          "type": row.data["type"],
-          "difficulty": row.data["difficulty"],
-          "initialCode": row.data["initialCode"],
-          "solution": row.data["solution"],
-          "options": List<String>.from(row.data["options"]),
-          "correctOrder": List<String>.from(row.data["correctOrder"]),
-          "points": row.data["points"],
-          "isCompleted": false,
-          "description": row.data["description"],
-          "nbFailed": 0,
-          "aiPointsUsed": 0,
-          "conversation": [],
-          "rate": 0,
-        });
+      for (final row in rows.rows) {
+        await dataRepository.createRow(
+          tableId: 'missions',
+          rowId: ID.unique(),
+          data: {
+            'user_id': _authProvider.currentUser!.id,
+            'title': row.data['title'],
+            'type': row.data['type'],
+            'difficulty': row.data['difficulty'],
+            'initialCode': row.data['initialCode'],
+            'solution': row.data['solution'],
+            'options': List<String>.from(row.data['options']),
+            'correctOrder': List<String>.from(row.data['correctOrder']),
+            'points': row.data['points'],
+            'isCompleted': false,
+            'description': row.data['description'],
+            'nbFailed': 0,
+            'aiPointsUsed': 0,
+            'conversation': [],
+            'rate': 0,
+          },
+        );
       }
-
-      /*ResolvedProfile profile =
-          ProfileResolver.resolve(userId: user!.$id, answers: data);
-      if (pathCreation) {
-        await AppwritecloudfunctionsService.createLearningPath(
-            profile, user!.$id);
-      }*/
     } catch (e) {
-      print("Error fi complete onboarding $e ");
+      debugPrint('DataProvider.completeOnboarding - error: $e');
       rethrow;
     }
   }
@@ -171,23 +245,24 @@ class DataProvider extends ChangeNotifier {
       Row? row;
       try {
         row = await dataRepository.getRow(
-            tableId: "user_profiles", rowId: authProvider.currentUser!.id);
+          tableId: 'user_profiles',
+          rowId: _authProvider.currentUser!.id,
+        );
       } on AppwriteException catch (e) {
         if (e.code == 404) {
-          print("Profile not founnd ");
-
+          debugPrint('DataProvider.getUserInfo - profile not found, first login');
           isFirstLogin = true;
           progress = UserInfo(
-            progLanguage: "not selected",
-            username: authProvider.currentUser!.name,
+            progLanguage: 'not selected',
+            username: _authProvider.currentUser!.name,
             experience: 500,
             totalPoints: 0,
             earnedBadges: [],
-            bio: "",
-            imageId: "",
-            email: authProvider.currentUser!.email,
+            bio: '',
+            imageId: '',
+            email: _authProvider.currentUser!.email,
             rank: 0,
-            difficultySelected: "Intermediate",
+            difficultySelected: 'Intermediate',
             nbMissions: 0,
             missions: [],
             badgesProgress: {
@@ -196,7 +271,7 @@ class DataProvider extends ChangeNotifier {
               'multipleChoice': 0,
               'ordering': 0,
               'singleChoice': 0,
-              'test': 0
+              'test': 0,
             },
             showingBadges: [],
             nbMissionCompletedWithoutHints: 0,
@@ -205,84 +280,84 @@ class DataProvider extends ChangeNotifier {
             elo: 0,
           );
           await dataRepository.createRow(
-              rowId: authProvider.currentUser!.id,
-              tableId: 'user_profiles',
-              data: {
-                "progLanguage": "not selected",
-                "username": authProvider.currentUser!.name,
-                "experience": 500,
-                "totalPoints": 0,
-                "earnedBadges": [],
-                "bio": "",
-                "imageId": "",
-                "difficulty": "Intermediate",
-                "nbMission": 0,
-                "badgesProgress": jsonEncode({
-                  'debug': 0,
-                  'complete': 0,
-                  'multipleChoice': 0,
-                  'ordering': 0,
-                  'singleChoice': 0,
-                  'test': 0
-                }),
-                "nbMissionCompletedWithoutHints": 0,
-                "totalFailures": 0,
-                "totalAIQuestions": 0,
-                "elo": 0,
-              });
+            rowId: _authProvider.currentUser!.id,
+            tableId: 'user_profiles',
+            data: {
+              'progLanguage': 'not selected',
+              'username': _authProvider.currentUser!.name,
+              'experience': 500,
+              'totalPoints': 0,
+              'earnedBadges': [],
+              'bio': '',
+              'imageId': '',
+              'difficulty': 'Intermediate',
+              'nbMission': 0,
+              'badgesProgress': jsonEncode({
+                'debug': 0,
+                'complete': 0,
+                'multipleChoice': 0,
+                'ordering': 0,
+                'singleChoice': 0,
+                'test': 0,
+              }),
+              'nbMissionCompletedWithoutHints': 0,
+              'totalFailures': 0,
+              'totalAIQuestions': 0,
+              'elo': 0,
+            },
+          );
           notifyListeners();
           return;
         } else {
           rethrow;
         }
       }
-      int x = await getRank();
-      isFirstLogin = row.data["isFirstLogin"] ?? true;
+
+      final int x = await getRank();
+      isFirstLogin = row.data['isFirstLogin'] ?? true;
       progress = UserInfo(
-        progLanguage: row.data["progLanguage"] ?? "not selected",
-        username: authProvider.currentUser!.name,
-        experience: row.data["experience"],
-        totalPoints: row.data["totalPoints"],
-        earnedBadges: List<String>.from(row.data["earnedBadges"] ?? []),
-        bio: row.data["bio"],
-        imageId: row.data["imageId"],
-        email: authProvider.currentUser!.email,
+        progLanguage: row.data['progLanguage'] ?? 'not selected',
+        username: _authProvider.currentUser!.name,
+        experience: row.data['experience'],
+        totalPoints: row.data['totalPoints'],
+        earnedBadges: List<String>.from(row.data['earnedBadges'] ?? []),
+        bio: row.data['bio'],
+        imageId: row.data['imageId'],
+        email: _authProvider.currentUser!.email,
         rank: x,
-        difficultySelected: row.data["difficulty"] ?? "Intermediate",
-        nbMissions: row.data["nbMission"] ?? 0,
+        difficultySelected: row.data['difficulty'] ?? 'Intermediate',
+        nbMissions: row.data['nbMission'] ?? 0,
         missions: await getMissions(),
-        // Sécurisation du jsonDecode au cas où le champ serait null
-        badgesProgress: row.data["badgesProgress"] != null
-            ? jsonDecode(row.data["badgesProgress"])
+        badgesProgress: row.data['badgesProgress'] != null
+            ? jsonDecode(row.data['badgesProgress'])
             : {},
         showingBadges: [],
         nbMissionCompletedWithoutHints:
-            row.data["nbMissionCompletedWithoutHints"] ?? 0,
-        totalFailures: row.data["totalFailures"] ?? 0,
-        totalAIQuestions: row.data["totalAIQuestions"] ?? 0,
-        elo: row.data["elo"],
+            row.data['nbMissionCompletedWithoutHints'] ?? 0,
+        totalFailures: row.data['totalFailures'] ?? 0,
+        totalAIQuestions: row.data['totalAIQuestions'] ?? 0,
+        elo: row.data['elo'],
       );
 
       if (!isFirstLogin) {
         await getuserGoals();
       }
+
       try {
-        // AppwritecloudfunctionsService.createLearningPath(id: authProvider.currentUser!.id , progLang: "Java",desc: "Java Tutoriel");
-        path = await fetchLearningPath(authProvider.currentUser!.id);
+        path = await fetchLearningPath(_authProvider.currentUser!.id);
       } on AppwriteException catch (e) {
         if (e.code == 404) {
           try {
             dataRepository.getRow(
-                tableId: 'user_goals', rowId: authProvider.currentUser!.id);
-            await AppwritecloudfunctionsService.createLearningPath(
-                id: authProvider.currentUser!.id,
-                progLang: 'Go',
-                desc: 'learn go from scratch');
+              tableId: 'user_goals',
+              rowId: _authProvider.currentUser!.id,
+            );
+      
           } on AppwriteException catch (e) {
             if (e.code == 404) {
               isFirstLogin = true;
             }
-            print("user_goals not found go to onBoarding");
+            debugPrint('DataProvider.getUserInfo - user_goals not found, going to onboarding');
           }
         } else {
           rethrow;
@@ -291,18 +366,18 @@ class DataProvider extends ChangeNotifier {
         notifyListeners();
       }
     } catch (e) {
-      debugPrint("Error fi getUserInfo $e");
+      debugPrint('DataProvider.getUserInfo - error: $e');
       rethrow;
     }
   }
 
   Future<void> getuserGoals() async {
     final row = await dataRepository.getRow(
-        tableId: "user_goals", rowId: authProvider.currentUser!.id);
-
-    progress.rate = row.data["rate"] / 1;
-
-    userGoals = jsonDecode(row.data["prompt"]);
+      tableId: 'user_goals',
+      rowId: _authProvider.currentUser!.id,
+    );
+    progress.rate = row.data['rate'] / 1;
+    userGoals = jsonDecode(row.data['prompt']);
   }
 
   Future<List<Mission>> getMissions() async {
@@ -311,12 +386,15 @@ class DataProvider extends ChangeNotifier {
       String date = DateTime.now().toUtc().toIso8601String().split('T').first;
       print(date);
 
-      response = await dataRepository.getRows(tableId: "missions", queries: [
-        Query.equal("user_id", authProvider.currentUser!.id),
-        Query.createdAfter("${date}T00:00:00Z"),
-        Query.createdBefore("${date}T23:59:59Z"),
-        Query.orderDesc("\$createdAt"),
-      ]);
+      response = await dataRepository.getRows(
+        tableId: 'missions',
+        queries: [
+          Query.equal('user_id', _authProvider.currentUser!.id),
+          Query.createdAfter('${date}T00:00:00Z'),
+          Query.createdBefore('${date}T23:59:59Z'),
+          Query.orderDesc('\$createdAt'),
+        ],
+      );
 
       if (response.rows.isEmpty) {
         date = DateTime.now()
@@ -326,65 +404,56 @@ class DataProvider extends ChangeNotifier {
             .split('T')
             .first;
 
-        response = await dataRepository.getRows(tableId: "missions", queries: [
-          Query.equal("user_id", authProvider.currentUser!.id),
-          Query.createdAfter("${date}T00:00:00Z"),
-          Query.createdBefore("${date}T23:59:59Z"),
-          Query.orderDesc("\$createdAt"),
-        ]);
+        response = await dataRepository.getRows(
+          tableId: 'missions',
+          queries: [
+            Query.equal('user_id', _authProvider.currentUser!.id),
+            Query.createdAfter('${date}T00:00:00Z'),
+            Query.createdBefore('${date}T23:59:59Z'),
+            Query.orderDesc('\$createdAt'),
+          ],
+        );
       }
 
       return response.rows.map((doc) {
-        final MissionType type = MissionType.values
-            .firstWhere((e) => e.name.contains(doc.data["type"]));
+        final MissionType type =
+            MissionType.values.firstWhere((e) => e.name.contains(doc.data['type']));
         switch (type) {
           case MissionType.complete:
             return Mission.completeMission(doc);
-
           case MissionType.debug:
             return Mission.debugMission(doc);
-
           case MissionType.multipleChoice:
             return Mission.multipleChoice(doc);
-
           case MissionType.ordering:
             return Mission.ordering(doc);
-
           case MissionType.singleChoice:
             return Mission.singleChoice(doc);
-
           case MissionType.test:
             return Mission.testMission(doc);
         }
       }).toList();
     } catch (e) {
-      debugPrint("Error fetching missions: $e");
+      debugPrint('DataProvider.getMissions - error: $e');
       rethrow;
     }
   }
 
   Future<Mission> loadMissions(String id) async {
-    var mission = await dataRepository.getRow(tableId: "missions", rowId: id);
-
-    final MissionType type = MissionType.values
-        .firstWhere((e) => e.name.contains(mission.data["type"]));
-
+    final mission = await dataRepository.getRow(tableId: 'missions', rowId: id);
+    final MissionType type =
+        MissionType.values.firstWhere((e) => e.name.contains(mission.data['type']));
     switch (type) {
       case MissionType.complete:
         return Mission.completeMission(mission);
-
       case MissionType.debug:
         return Mission.debugMission(mission);
-
       case MissionType.multipleChoice:
         return Mission.multipleChoice(mission);
-
       case MissionType.ordering:
         return Mission.ordering(mission);
-
       case MissionType.singleChoice:
         return Mission.singleChoice(mission);
-
       case MissionType.test:
         return Mission.testMission(mission);
     }
@@ -399,19 +468,18 @@ class DataProvider extends ChangeNotifier {
           progress.missions[i].aiPointsUsed = previousAiPointsUsed + 1;
         }
       }
-      int currentAiPointsUsed = previousAiPointsUsed + 1;
-      int previousTotalAIQuestions = progress.totalAIQuestions;
-      int currentToalAIQuestions = previousTotalAIQuestions + 1;
-      progress.totalAIQuestions = currentToalAIQuestions;
+      final int currentAiPointsUsed = previousAiPointsUsed + 1;
+      final int currentTotalAIQuestions = progress.totalAIQuestions + 1;
+      progress.totalAIQuestions = currentTotalAIQuestions;
       await dataRepository.updateRow(
-        tableId: "missions",
+        tableId: 'missions',
         rowId: id,
         data: {'aiPointsUsed': currentAiPointsUsed},
       );
       await dataRepository.updateRow(
-        tableId: "user_profiles",
-        rowId: authProvider.currentUser!.id,
-        data: {'totalAIQuestions': currentToalAIQuestions},
+        tableId: 'user_profiles',
+        rowId: _authProvider.currentUser!.id,
+        data: {'totalAIQuestions': currentTotalAIQuestions},
       );
       await updateUserPoints(-1);
       notifyListeners();
@@ -422,12 +490,11 @@ class DataProvider extends ChangeNotifier {
 
   Future<void> updateUserPoints(int nb) async {
     try {
-      int previousTotalPoints = progress.totalPoints;
-      int currentTotalPoints = previousTotalPoints + nb;
+      final int currentTotalPoints = progress.totalPoints + nb;
       progress.totalPoints = currentTotalPoints;
       await dataRepository.updateRow(
-        tableId: "user_profiles",
-        rowId: authProvider.currentUser!.id,
+        tableId: 'user_profiles',
+        rowId: _authProvider.currentUser!.id,
         data: {'totalPoints': currentTotalPoints},
       );
       notifyListeners();
@@ -441,9 +508,8 @@ class DataProvider extends ChangeNotifier {
     try {
       progress.missions[index].conversation
           .add(jsonEncode({'role': role, 'message': msg}));
-
       await dataRepository.updateRow(
-        tableId: "missions",
+        tableId: 'missions',
         rowId: id,
         data: {'conversation': progress.missions[index].conversation},
       );
@@ -454,12 +520,12 @@ class DataProvider extends ChangeNotifier {
 
   Future<void> updateXp(int xp) async {
     try {
-      int newExperience = progress.experience + xp;
+      final int newExperience = progress.experience + xp;
       progress.experience = newExperience;
       notifyListeners();
       await dataRepository.updateRow(
-        tableId: "user_profiles",
-        rowId: authProvider.currentUser!.id,
+        tableId: 'user_profiles',
+        rowId: _authProvider.currentUser!.id,
         data: {'experience': newExperience},
       );
     } catch (e) {
@@ -470,26 +536,27 @@ class DataProvider extends ChangeNotifier {
   Future<void> updateMissionStatus(String id, double rate) async {
     try {
       await dataRepository.updateRow(
-        tableId: "missions",
+        tableId: 'missions',
         rowId: id,
-        data: {'isCompleted': true, "rate": rate},
+        data: {'isCompleted': true, 'rate': rate},
       );
       progress.nbMissions += 1;
       await dataRepository.updateRow(
-          tableId: "user_profiles",
-          rowId: authProvider.currentUser!.id,
-          data: {'nbMission': progress.nbMissions});
+        tableId: 'user_profiles',
+        rowId: _authProvider.currentUser!.id,
+        data: {'nbMission': progress.nbMissions},
+      );
       int? missionNb;
-      int missionDiffculty = 0;
+      int missionDifficulty = 0;
       int missionPoints = 0;
       for (int i = 0; i < progress.missions.length; i++) {
         if (progress.missions[i].id == id) {
           progress.missions[i].isCompleted.value = true;
-          missionDiffculty = progress.missions[i].difficulty;
+          missionDifficulty = progress.missions[i].difficulty;
           missionNb = i;
         }
       }
-      await updateRate(missionDiffculty, missionPoints, rate);
+      await updateRate(missionDifficulty, missionPoints, rate);
       await checkbadges(missionNb!);
       notifyListeners();
     } catch (e) {
@@ -500,26 +567,25 @@ class DataProvider extends ChangeNotifier {
   Future<void> updateMissionStatusLP(String id, double rate) async {
     try {
       await dataRepository.updateRow(
-        tableId: "missions",
+        tableId: 'missions',
         rowId: id,
-        data: {'isCompleted': true, "rate": rate},
+        data: {'isCompleted': true, 'rate': rate},
       );
       progress.nbMissions += 1;
       await dataRepository.updateRow(
-          tableId: "user_profiles",
-          rowId: authProvider.currentUser!.id,
-          data: {'nbMission': progress.nbMissions});
-
-      int missionDiffculty = 0;
+        tableId: 'user_profiles',
+        rowId: _authProvider.currentUser!.id,
+        data: {'nbMission': progress.nbMissions},
+      );
+      int missionDifficulty = 0;
       int missionPoints = 0;
       for (int i = 0; i < progress.missions.length; i++) {
         if (progress.missions[i].id == id) {
           progress.missions[i].isCompleted.value = true;
-          missionDiffculty = progress.missions[i].difficulty;
+          missionDifficulty = progress.missions[i].difficulty;
         }
       }
-      await updateRate(missionDiffculty, missionPoints, rate);
-
+      await updateRate(missionDifficulty, missionPoints, rate);
       notifyListeners();
     } catch (e) {
       rethrow;
@@ -529,27 +595,25 @@ class DataProvider extends ChangeNotifier {
   Future<void> surrendereMission(String id) async {
     try {
       await dataRepository.updateRow(
-        tableId: "missions",
+        tableId: 'missions',
         rowId: id,
         data: {'Surrendered': true},
       );
       await dataRepository.updateRow(
-        tableId: "missions",
+        tableId: 'missions',
         rowId: id,
-        data: {"rate": 0.0},
+        data: {'rate': 0.0},
       );
-      int missionDiffculty = 0;
+      int missionDifficulty = 0;
       int missionPoints = 0;
       for (int i = 0; i < progress.missions.length; i++) {
         if (progress.missions[i].id == id) {
-          print(progress.missions[i].isSurrendered);
           progress.missions[i].isSurrendered = true;
-          print(progress.missions[i].isSurrendered);
-          missionDiffculty = progress.missions[i].difficulty;
+          missionDifficulty = progress.missions[i].difficulty;
           missionPoints = progress.missions[i].points;
         }
       }
-      await updateRate(missionDiffculty, missionPoints, 0);
+      await updateRate(missionDifficulty, missionPoints, 0);
       notifyListeners();
     } catch (e) {
       rethrow;
@@ -562,18 +626,13 @@ class DataProvider extends ChangeNotifier {
   }
 
   Future<void> updateRate(
-      int missionDiffculty, int missionPoints, double S) async {
+      int missionDifficulty, int missionPoints, double S) async {
     try {
-      //Elo Algorthime
-      //s= normalized mission rate
-      //E = Expected probability
-      //2 = is scale you can change
-      double E = 1 / (1 + pow(10, ((missionDiffculty - progress.rate) / 4)));
-      double k = 0.3 * (1 + 0.5 * (missionDiffculty / 10));
-      double s2 = S * (1 + 0.1 * (missionPoints / 2500));
-      // Update
+      final double E =
+          1 / (1 + pow(10, ((missionDifficulty - progress.rate) / 4)));
+      final double k = 0.3 * (1 + 0.5 * (missionDifficulty / 10));
+      final double s2 = S * (1 + 0.1 * (missionPoints / 2500));
       double newRate = progress.rate + k * (s2 - E);
-      print(newRate);
       progress.elo += ((k * (s2 - E)) * 100).toInt();
       if (progress.elo < 0) progress.elo = 0;
       if (newRate > 10) newRate = 10;
@@ -581,13 +640,15 @@ class DataProvider extends ChangeNotifier {
       progress.rate = double.parse(newRate.clamp(1, 10).toStringAsFixed(2));
       notifyListeners();
       await dataRepository.updateRow(
-          tableId: "user_goals",
-          rowId: authProvider.currentUser!.id,
-          data: {'rate': progress.rate});
+        tableId: 'user_goals',
+        rowId: _authProvider.currentUser!.id,
+        data: {'rate': progress.rate},
+      );
       await dataRepository.updateRow(
-          tableId: "user_profiles",
-          rowId: authProvider.currentUser!.id,
-          data: {'elo': progress.elo});
+        tableId: 'user_profiles',
+        rowId: _authProvider.currentUser!.id,
+        data: {'elo': progress.elo},
+      );
     } catch (e) {
       rethrow;
     }
@@ -595,81 +656,45 @@ class DataProvider extends ChangeNotifier {
 
   Future<void> checkbadges(int missionNb) async {
     try {
-      String missionType = progress.missions[missionNb].type.name;
+      final String missionType = progress.missions[missionNb].type.name;
       progress.badgesProgress[missionType] =
           (progress.badgesProgress[missionType]! + 1);
+
       int missionsCompletedToday = 0;
       for (int i = 0; i < progress.missions.length; i++) {
-        if (progress.missions[i].isCompleted.value) {
-          missionsCompletedToday += 1;
+        if (progress.missions[i].isCompleted.value) missionsCompletedToday += 1;
+      }
+
+      Future<void> award(String badge) async {
+        if (!progress.earnedBadges.contains(badge)) {
+          progress.earnedBadges.add(badge);
+          progress.showingBadges.add(badge);
+          await updateUserPoints(10);
         }
       }
 
-      if (progress.badgesProgress['debug']! >= 10) {
-        if (!progress.earnedBadges.contains('Bug Hunter')) {
-          progress.earnedBadges.add('Bug Hunter');
-          progress.showingBadges.add('Bug Hunter');
-          await updateUserPoints(10);
-        }
-      }
-      if (progress.nbMissionCompletedWithoutHints >= 10) {
-        if (!progress.earnedBadges.contains('Code Ninja')) {
-          progress.earnedBadges.add('Code Ninja');
-          progress.showingBadges.add('Code Ninja');
-          await updateUserPoints(10);
-        }
-      }
-      if (progress.badgesProgress['test']! >= 20) {
-        if (!progress.earnedBadges.contains('Test Master')) {
-          progress.earnedBadges.add('Test Master');
-          progress.showingBadges.add('Test Master');
-          await updateUserPoints(10);
-        }
-      }
-      if (missionsCompletedToday >= 5) {
-        if (!progress.earnedBadges.contains('Fast Learner')) {
-          progress.earnedBadges.add('Fast Learner');
-          progress.showingBadges.add('Fast Learner');
-          await updateUserPoints(10);
-        }
-      }
-      if (progress.badgesProgress['ordering'] >= 10) {
-        if (!progress.earnedBadges.contains('Architect')) {
-          progress.earnedBadges.add('Architect');
-          progress.showingBadges.add('Architect');
-          await updateUserPoints(10);
-        }
-      }
-      if (progress.badgesProgress['complete'] >= 10 &&
+      if (progress.badgesProgress['debug']! >= 10) await award('Bug Hunter');
+      if (progress.nbMissionCompletedWithoutHints >= 10) await award('Code Ninja');
+      if (progress.badgesProgress['test']! >= 20) await award('Test Master');
+      if (missionsCompletedToday >= 5) await award('Fast Learner');
+      if (progress.badgesProgress['ordering']! >= 10) await award('Architect');
+      if (progress.badgesProgress['complete']! >= 10 &&
           progress.totalFailures <= 30) {
-        if (!progress.earnedBadges.contains('Clean Coder')) {
-          progress.earnedBadges.add('Clean Coder');
-          progress.showingBadges.add('Clean Coder');
-          await updateUserPoints(10);
-        }
+        await award('Clean Coder');
       }
-      if (progress.badgesProgress['singleChoice'] >= 10 &&
-          progress.badgesProgress['multipleChoice'] >= 10) {
-        if (!progress.earnedBadges.contains('Team Player')) {
-          progress.earnedBadges.add('Team Player');
-          progress.showingBadges.add('Team Player');
-          await updateUserPoints(10);
-        }
+      if (progress.badgesProgress['singleChoice']! >= 10 &&
+          progress.badgesProgress['multipleChoice']! >= 10) {
+        await award('Team Player');
       }
-      if (progress.totalAIQuestions >= 50) {
-        if (!progress.earnedBadges.contains('AI Whisperer')) {
-          progress.earnedBadges.add('AI Whisperer');
-          progress.showingBadges.add('AI Whisperer');
-          await updateUserPoints(10);
-        }
-      }
+      if (progress.totalAIQuestions >= 50) await award('AI Whisperer');
+
       notifyListeners();
       await dataRepository.updateRow(
-        tableId: "user_profiles",
-        rowId: authProvider.currentUser!.id,
+        tableId: 'user_profiles',
+        rowId: _authProvider.currentUser!.id,
         data: {
           'badgesProgress': jsonEncode(progress.badgesProgress),
-          'earnedBadges': progress.earnedBadges
+          'earnedBadges': progress.earnedBadges,
         },
       );
     } catch (e) {
@@ -680,21 +705,20 @@ class DataProvider extends ChangeNotifier {
   Future<void> updateFailedNb(String id) async {
     try {
       progress.missions.firstWhere((m) => m.id.contains(id)).nbFailed += 1;
-
       await dataRepository.updateRow(
-        tableId: "missions",
+        tableId: 'missions',
         rowId: id,
         data: {
           'nbFailed':
-              progress.missions.firstWhere((m) => m.id.contains(id)).nbFailed
+              progress.missions.firstWhere((m) => m.id.contains(id)).nbFailed,
         },
       );
       await dataRepository.updateRow(
-        tableId: "user_profiles",
-        rowId: authProvider.currentUser!.id,
+        tableId: 'user_profiles',
+        rowId: _authProvider.currentUser!.id,
         data: {
           'totalFailures':
-              progress.missions.firstWhere((m) => m.id.contains(id)).nbFailed
+              progress.missions.firstWhere((m) => m.id.contains(id)).nbFailed,
         },
       );
       notifyListeners();
@@ -705,21 +729,23 @@ class DataProvider extends ChangeNotifier {
 
   Future<void> updateUserGoals(Map<String, String> data) async {
     await dataRepository.updateRow(
-        tableId: "user_goals",
-        rowId: authProvider.currentUser!.id,
-        data: {"prompt": jsonEncode(data)});
+      tableId: 'user_goals',
+      rowId: _authProvider.currentUser!.id,
+      data: {'prompt': jsonEncode(data)},
+    );
     userGoals = data;
     notifyListeners();
   }
 
   Future<void> fixEducationTime(DateTime? startDate, DateTime? endDate) async {
     await dataRepository.updateRow(
-        tableId: "user_goals",
-        rowId: authProvider.currentUser!.id,
-        data: {
-          "startDate": startDate?.toString(),
-          "endDate": endDate?.toString()
-        });
+      tableId: 'user_goals',
+      rowId: _authProvider.currentUser!.id,
+      data: {
+        'startDate': startDate?.toString(),
+        'endDate': endDate?.toString(),
+      },
+    );
   }
 
   Future<void> updateProfile(
@@ -730,27 +756,28 @@ class DataProvider extends ChangeNotifier {
           bucketId: '69891b1d0012c9a7e862',
           fileId: ID.unique(),
           file: InputFile.fromPath(
-              path: imagePath, filename: imagePath.split('/').last),
+            path: imagePath,
+            filename: imagePath.split('/').last,
+          ),
         );
         await dataRepository.updateRow(
-          tableId: "user_profiles",
-          rowId: authProvider.currentUser!.id,
+          tableId: 'user_profiles',
+          rowId: _authProvider.currentUser!.id,
           data: {'imageId': file.$id, 'bio': bio},
         );
         progress.bio = bio;
         progress.imageId = file.$id;
         progress.username = userName;
-        notifyListeners();
       } else {
         await dataRepository.updateRow(
-          tableId: "user_profiles",
-          rowId: authProvider.currentUser!.id,
+          tableId: 'user_profiles',
+          rowId: _authProvider.currentUser!.id,
           data: {'bio': bio},
         );
         progress.bio = bio;
         progress.username = userName;
-        notifyListeners();
       }
+      notifyListeners();
     } catch (e) {
       rethrow;
     }
@@ -759,8 +786,8 @@ class DataProvider extends ChangeNotifier {
   Future<void> updateLanguageSelected(String languageSelected) async {
     try {
       await dataRepository.updateRow(
-        tableId: "user_profiles",
-        rowId: authProvider.currentUser!.id,
+        tableId: 'user_profiles',
+        rowId: _authProvider.currentUser!.id,
         data: {'progLanguage': languageSelected},
       );
       progress.progLanguage = languageSelected;
@@ -772,17 +799,16 @@ class DataProvider extends ChangeNotifier {
 
   Future<int> getRank() async {
     try {
-      final r =
-          await dataRepository.getRows(tableId: "user_profiles", queries: [
-        Query.orderDesc("experience"),
-      ]);
-
+      final r = await dataRepository.getRows(
+        tableId: 'user_profiles',
+        queries: [Query.orderDesc('experience')],
+      );
       return r.rows.indexWhere(
-            (row) => row.$id == authProvider.currentUser!.id,
+            (row) => row.$id == _authProvider.currentUser!.id,
           ) +
           1;
     } on AppwriteException catch (e) {
-      debugPrint("Error getRank : ${e.message}");
+      debugPrint('DataProvider.getRank - error: ${e.message}');
       rethrow;
     }
   }
@@ -792,13 +818,13 @@ class DataProvider extends ChangeNotifier {
       progress.difficultySelected = difficultySelected;
       notifyListeners();
       await dataRepository.updateRow(
-        tableId: "user_goals",
-        rowId: authProvider.currentUser!.id,
+        tableId: 'user_goals',
+        rowId: _authProvider.currentUser!.id,
         data: {'difficulty': difficultySelected},
       );
       await dataRepository.updateRow(
-        tableId: "user_profiles",
-        rowId: authProvider.currentUser!.id,
+        tableId: 'user_profiles',
+        rowId: _authProvider.currentUser!.id,
         data: {'difficulty': difficultySelected},
       );
     } catch (e) {
@@ -806,86 +832,69 @@ class DataProvider extends ChangeNotifier {
     }
   }
 
-  // learning path
+  // ─── Learning Path ────────────────────────────────────────────────────────
+
   Future<LearningPath?> fetchLearningPath(String learningPathId) async {
     try {
       final lpRow = await dataRepository.getRow(
-        tableId: "learnig_paths",
+        tableId: 'learnig_paths',
         rowId: learningPathId,
       );
 
       final results = await Future.wait([
         dataRepository.getRows(
-          tableId: "learnig_path_concepts",
+          tableId: 'learnig_path_concepts',
           queries: [Query.equal('learningPathId', learningPathId)],
         ),
         dataRepository.getRows(
-          tableId: "learnig_path_milestones",
+          tableId: 'learnig_path_milestones',
           queries: [Query.equal('learningPathId', learningPathId)],
         ),
         dataRepository.getRows(
-          tableId: "learning_path_missions",
+          tableId: 'learning_path_missions',
           queries: [Query.equal('learningPathId', learningPathId)],
         ),
       ]);
 
-      print("0");
-
-      final missions = (results[2]).rows.map((doc) {
-        print(doc.data["title"]);
-        final MissionType type = MissionType.values
-            .firstWhere((e) => e.name.contains(doc.data["type"]));
-        print(type.name);
+      final missions = results[2].rows.map((doc) {
+        final MissionType type =
+            MissionType.values.firstWhere((e) => e.name.contains(doc.data['type']));
         switch (type) {
           case MissionType.complete:
-            print("ok");
             return Mission.completeMission(doc);
-
           case MissionType.debug:
             return Mission.debugMission(doc);
-
           case MissionType.multipleChoice:
             return Mission.multipleChoice(doc);
-
           case MissionType.ordering:
             return Mission.ordering(doc);
-
           case MissionType.singleChoice:
             return Mission.singleChoice(doc);
-
           case MissionType.test:
             return Mission.testMission(doc);
         }
       }).toList();
-      print("Load sayyer ");
-      final concepts = (results[0])
-          .rows
-          .map((d) => Concept.fromJson(d.data, missions))
-          .toList();
 
-      print("Concept sayyer");
+      final concepts =
+          results[0].rows.map((d) => Concept.fromJson(d.data, missions)).toList();
 
-      final milestones = (results[1])
+      final milestones = results[1]
           .rows
           .map((d) => LearningPathMilestone.fromJson(d.data, concepts))
           .toList();
 
-      print("milestones sayyer");
-
-      print("Nb missions ${missions.length}");
-
       return LearningPath(
-          id: lpRow.$id,
-          language: lpRow.data["language"],
-          milestones: milestones,
-          concepts: concepts,
-          missions: missions,
-
-          startedAt: DateTime.now(),
-          completedAt: DateTime.now(),
-          currentLevel: lpRow.data["currentLevel"]);
+        id: lpRow.$id,
+        language: lpRow.data['language'],
+        milestones: milestones,
+        concepts: concepts,
+        missions: missions,
+        startedAt: DateTime.now(),
+        completedAt: DateTime.now(),
+        currentLevel: lpRow.data['currentLevel'],
+      );
     } catch (e) {
-      print('Failed to fetch LearningPath: $e');
+      debugPrint('DataProvider.fetchLearningPath - error: $e');
       return null;
     }
   }
@@ -894,24 +903,23 @@ class DataProvider extends ChangeNotifier {
     try {
       final lpDoc = await _saveLearningPathRow(path!);
       final learningPathId = lpDoc.$id;
-
       await Future.wait([
         ...path!.concepts.map((c) => _saveConcept(c, learningPathId)),
         ...path!.milestones.map((m) => _saveMilestone(m, learningPathId)),
         ...path!.missions.map((ms) => _saveMission(ms, learningPathId)),
       ]);
       await fetchLearningPath(path!.id);
-      print('LearningPath saved successfully (id: $learningPathId)');
+      debugPrint('LearningPath saved successfully (id: $learningPathId)');
       notifyListeners();
     } catch (e) {
-      print('Failed to save LearningPath: $e');
+      debugPrint('DataProvider.saveLearningPath - error: $e');
       rethrow;
     }
   }
 
   Future<Row> _saveLearningPathRow(LearningPath path) async {
     return dataRepository.updateRow(
-      tableId: "learnig_paths",
+      tableId: 'learnig_paths',
       rowId: path.id,
       data: {
         'totalConceptsCompleted': path.totalConceptsCompleted,
@@ -925,7 +933,7 @@ class DataProvider extends ChangeNotifier {
 
   Future<void> _saveConcept(Concept concept, String learningPathId) async {
     await dataRepository.updateRow(
-      tableId: "learnig_path_concepts",
+      tableId: 'learnig_path_concepts',
       rowId: concept.id,
       data: {
         'isCompleted': concept.isCompleted,
@@ -952,7 +960,7 @@ class DataProvider extends ChangeNotifier {
 
   Future<void> _saveMission(Mission mission, String learningPathId) async {
     await dataRepository.updateRow(
-      tableId: "learning_path_missions",
+      tableId: 'learning_path_missions',
       rowId: mission.id,
       data: {
         'isCompleted': mission.isCompleted,

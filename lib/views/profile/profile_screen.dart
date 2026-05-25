@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:pfe_test/services/Auth/auth_provider.dart';
 import 'package:pfe_test/services/Data/data_provider.dart';
 import 'package:pfe_test/theme/app_theme.dart';
+import 'package:pfe_test/views/auth/login_screen.dart';
 import 'package:pfe_test/widgets/rank_widget.dart';
 import 'package:provider/provider.dart';
 
@@ -33,7 +34,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final authService = Provider.of<DataProvider>(context);
-    
+
     final auth = Provider.of<AuthProvider>(context);
     final user = authService.authProvider.currentUser;
     final String userImage = authService.progress.imageId;
@@ -63,10 +64,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
             IconButton(
               icon: const Icon(Icons.logout),
               onPressed: () async {
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  (route) => false,
+                );
+
+                // Sign out after navigation — DataProvider will self-clear via its
+                // AuthProvider listener, but no mounted widget will be affected.
                 await auth.signOut();
-                Navigator.pop(context);
               },
-            )
+            ),
           ],
         ),
         body: SingleChildScrollView(
@@ -106,8 +113,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const SizedBox(height: 16),
               RankWidget(
                 elo: authService.progress.elo,
-                rank: rank, showBar: true, height: 100, width: 100,
-                
+                rank: rank,
+                showBar: true,
+                height: 100,
+                width: 100,
               ),
             ],
           ),

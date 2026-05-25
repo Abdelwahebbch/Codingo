@@ -34,7 +34,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
     final authservice = Provider.of<DataProvider>(context, listen: false);
-    username = authservice.authProvider.currentUser!.name;
+    username = authservice.authProvider.currentUser?.name ?? '';
     List<String> badges = [];
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       showNotif(badges);
@@ -47,11 +47,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final List<Widget> screens = [
       const DashboardHome(),
       PartyHomeScreen(
-        username: Provider.of<AuthProvider>(context)
-            .currentUser!
-            .name
-            .split(' ')
-            .first,
+        username: Provider.of<AuthProvider>(context, listen: false)
+                .currentUser
+                ?.name
+                .split(' ')
+                .first ??
+            '',
       ),
       const BadgesScreen(),
       const SettingsScreen(),
@@ -321,7 +322,6 @@ class DashboardHomeState extends State<DashboardHome> {
                                       .headlineMedium),
                             ],
                           ),
-                        
                           GestureDetector(
                             onTap: () {
                               Navigator.push(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:pfe_test/main.dart';
 import 'package:pfe_test/services/Auth/auth_provider.dart';
 import 'package:pfe_test/services/Data/data_provider.dart';
+import 'package:pfe_test/views/auth/login_screen.dart';
 import 'package:pfe_test/views/settings/edit_prog_lang_screen.dart';
 import 'package:provider/provider.dart';
 import '../../theme/app_theme.dart';
@@ -21,8 +22,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final authService = Provider.of<DataProvider>(context, listen: true);
-    final auth= Provider.of<AuthProvider>(context, listen: true);
-    final themeManager = Provider.of<ThemeManager>(context,listen: true);
+    final auth = Provider.of<AuthProvider>(context, listen: true);
+    final themeManager = Provider.of<ThemeManager>(context, listen: true);
 
     final isDark = themeManager.themeMode == ThemeMode.dark;
     return SafeArea(
@@ -36,7 +37,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Text(
               "Settings",
               style: TextStyle(
-                  color: isDark ? Colors.white : Colors.black87, fontSize: 21, fontWeight: FontWeight.bold),
+                  color: isDark ? Colors.white : Colors.black87,
+                  fontSize: 21,
+                  fontWeight: FontWeight.bold),
             ),
             const SizedBox(
               height: 16,
@@ -73,12 +76,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
               activeTrackColor: AppTheme.primaryColor,
               onChanged: (val) {
                 //=> setState(() => _notificationsEnabled = val)
-      
+
                 showDialog(
                     context: context,
                     builder: (context) {
                       return AlertDialog(
-                        title: Text("Coming Soon",style: TextStyle(color:  isDark ? Colors.white: Colors.black87),),
+                        title: Text(
+                          "Coming Soon",
+                          style: TextStyle(
+                              color: isDark ? Colors.white : Colors.black87),
+                        ),
                         content: const Text(
                             "This feature is not yet available. It will be released in a future update."),
                       );
@@ -91,7 +98,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               activeTrackColor: AppTheme.primaryColor,
               onChanged: (val) => themeManager.toggleTheme(val),
             ),
-            
             const SizedBox(height: 24),
             _buildSectionHeader("Support"),
             _buildSettingTile(
@@ -119,23 +125,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
               icon: Icons.feedback_outlined,
               title: "Share your feedback with us !",
               onTap: () {
-                Navigator.push(context,
-                    MaterialPageRoute(builder: (context) => const FeedbackBox()));
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const FeedbackBox()));
               },
             ),
             const SizedBox(height: 40),
             ElevatedButton(
               onPressed: () async {
+                // Navigate away FIRST — removes all current widgets from the tree
+                // so nothing crashes when DataProvider clears itself a moment later.
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  (route) => false,
+                );
+
+                // Sign out after navigation — DataProvider will self-clear via its
+                // AuthProvider listener, but no mounted widget will be affected.
                 await auth.signOut();
-                if (context.mounted) {
-                  Navigator.of(context).pushAndRemoveUntil(
-                      MaterialPageRoute(
-                          builder: (context) => const AuthWrapper()),
-                      (route) => false);
-                }
               },
               style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red.withValues(alpha: 0.8)),
+                backgroundColor: Colors.red.withValues(alpha: 0.8),
+              ),
               child: const Text("LOGOUT"),
             ),
             const SizedBox(height: 20),
@@ -167,17 +179,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
       required String title,
       String? subtitle,
       required VoidCallback onTap}) {
-        final themeManager = Provider.of<ThemeManager>(context,listen: true);
-        final isDark = themeManager.themeMode == ThemeMode.dark;
+    final themeManager = Provider.of<ThemeManager>(context, listen: true);
+    final isDark = themeManager.themeMode == ThemeMode.dark;
     return ListTile(
-      leading: Icon(icon, color:  isDark ? Colors.white70 : Colors.black87,),
+      leading: Icon(
+        icon,
+        color: isDark ? Colors.white70 : Colors.black87,
+      ),
       title: Text(title),
       subtitle: subtitle != null
           ? Text(subtitle, style: const TextStyle(color: Colors.grey))
           : null,
-      trailing:  Icon(Icons.chevron_right, size: 20,color: isDark ? Colors.white : Colors.black87,),
+      trailing: Icon(
+        Icons.chevron_right,
+        size: 20,
+        color: isDark ? Colors.white : Colors.black87,
+      ),
       onTap: onTap,
     );
   }
-  
 }

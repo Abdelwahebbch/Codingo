@@ -1,7 +1,10 @@
 // ignore_for_file: dead_code
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:pfe_test/services/Auth/auth_provider.dart';
+import 'package:pfe_test/services/Data/data_provider.dart';
 import 'package:pfe_test/views/dashboard/dashboard_screen.dart';
 import 'package:pfe_test/views/onboarding/onboarding_screen.dart';
 import 'package:provider/provider.dart';
@@ -16,20 +19,20 @@ class GoogleSignInButton extends StatefulWidget {
 class _GoogleSignInButtonState extends State<GoogleSignInButton> {
   Future<void> _handleGoogleSignIn() async {
     final authService = Provider.of<AuthProvider>(context, listen: false);
+    final dataProvider = Provider.of<DataProvider>(context, listen: false);
     try {
       await authService.signInWithGoogle();
       if (!mounted) return;
-      if (/*authService.isFirstLogin*/ false) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const OnboardingScreen()),
-        );
-      } else {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const DashboardScreen()),
-        );
+      if (dataProvider.isLoading) {
+        await _waitForData(dataProvider);
       }
+
+      if (!mounted) return;
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const DashboardScreen()),
+      );
     } catch (e) {
       if (mounted) {
         print(e);
@@ -38,6 +41,24 @@ class _GoogleSignInButtonState extends State<GoogleSignInButton> {
         );
       }
     }
+  }
+
+  Future<void> _waitForData(DataProvider dataProvider) {
+    final completer = Completer<void>();
+    void listener() {
+      if (!dataProvider.isLoading) {
+        dataProvider.removeListener(listener);
+        if (!completer.isCompleted) completer.complete();
+      }
+    }
+
+    dataProvider.addListener(listener);
+    // Guard: already done before we added the listener.
+    if (!dataProvider.isLoading && !completer.isCompleted) {
+      dataProvider.removeListener(listener);
+      completer.complete();
+    }
+    return completer.future;
   }
 
   @override
