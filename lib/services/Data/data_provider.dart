@@ -73,31 +73,25 @@ class DataProvider extends ChangeNotifier {
   }
   // ─────────────────────────────────────────────────────────────────────────
 
-bool _isInitializing = false; // add this field
+  bool _isInitializing = false; // add this field
 
-Future<void> init() async {
-  if (_isInitializing) return; // ← already running, skip
-  _isInitializing = true;
-  _isLoading = true;
-  notifyListeners();
-  try {
-    await getUserInfo();
-    _status = AuthStatus.authenticated;
-    notifyListeners();
-  } catch (e) {
-    debugPrint('DataProvider.init - error: $e');
-    _status = AuthStatus.unauthenticated;
-  } finally {
-    _isLoading = false;
-    _isInitializing = false;
-    notifyListeners();
-  }
-}
-
-  Future<void> reload() async {
+  Future<void> init() async {
+    if (_isInitializing) return; // ← already running, skip
+    _isInitializing = true;
     _isLoading = true;
     notifyListeners();
-    await init();
+    try {
+      await getUserInfo();
+      _status = AuthStatus.authenticated;
+      notifyListeners();
+    } catch (e) {
+      debugPrint('DataProvider.init - error: $e');
+      _status = AuthStatus.unauthenticated;
+    } finally {
+      _isLoading = false;
+      _isInitializing = false;
+      notifyListeners();
+    }
   }
 
   /// Wipe all user-specific state when the session ends.
@@ -112,35 +106,35 @@ Future<void> init() async {
 
   // ─── Static helper so _emptyUserInfo can be called both in the field
   //     initializer and in _clearData() without repeating the literal.
-  static UserInfo _emptyUserInfo() => UserInfo(
-        progLanguage: 'not selected',
-        username: '',
-        experience: 0,
-        totalPoints: 0,
-        earnedBadges: [],
-        bio: '',
-        imageId: '',
-        email: '',
-        rank: 0,
-        difficultySelected: 'Intermediate',
-        nbMissions: 0,
-        missions: [],
-        badgesProgress: {
-          'debug': 0,
-          'complete': 0,
-          'multipleChoice': 0,
-          'ordering': 0,
-          'singleChoice': 0,
-          'test': 0,
-        },
-        showingBadges: [],
-        nbMissionCompletedWithoutHints: 0,
-        totalFailures: 0,
-        totalAIQuestions: 0,
-        elo: 0,
-      );
-
-
+  static UserInfo _emptyUserInfo() {
+    return UserInfo(
+      progLanguage: 'not selected',
+      username: '',
+      experience: 0,
+      totalPoints: 0,
+      earnedBadges: [],
+      bio: '',
+      imageId: '',
+      email: '',
+      rank: 0,
+      difficultySelected: 'Intermediate',
+      nbMissions: 0,
+      missions: [],
+      badgesProgress: {
+        'debug': 0,
+        'complete': 0,
+        'multipleChoice': 0,
+        'ordering': 0,
+        'singleChoice': 0,
+        'test': 0,
+      },
+      showingBadges: [],
+      nbMissionCompletedWithoutHints: 0,
+      totalFailures: 0,
+      totalAIQuestions: 0,
+      elo: 0,
+    );
+  }
 
   Future<void> completeOnboarding(
     Map<String, String> data,
@@ -150,8 +144,7 @@ Future<void> init() async {
   ) async {
     try {
       userGoals = data;
-      print(progress.progLanguage);
-      print(data['journey'].toString());
+
       if (startDate != null && endDate != null) {
         await dataRepository.createRow(
           tableId: 'user_goals',
@@ -211,119 +204,101 @@ Future<void> init() async {
     }
   }
 
-Future<void> getUserInfo() async {
-  try {
-    Row? row;
+  Future<void> getUserInfo() async {
     try {
-      row = await dataRepository.getRow(
-        tableId: 'user_profiles',
-        rowId: _authProvider.currentUser!.id,
-      );
-    } on AppwriteException catch (e) {
-      if (e.code == 404) {
-        debugPrint('DataProvider.getUserInfo - no profile, first login');
-        isFirstLogin = true;
-        progress = UserInfo(
-          progLanguage: 'not selected',
-          username: _authProvider.currentUser!.name,
-          experience: 500,
-          totalPoints: 0,
-          earnedBadges: [],
-          bio: '',
-          imageId: '',
-          email: _authProvider.currentUser!.email,
-          rank: 0,
-          difficultySelected: 'Intermediate',
-          nbMissions: 0,
-          missions: [],
-          badgesProgress: {
-            'debug': 0, 'complete': 0, 'multipleChoice': 0,
-            'ordering': 0, 'singleChoice': 0, 'test': 0,
-          },
-          showingBadges: [],
-          nbMissionCompletedWithoutHints: 0,
-          totalFailures: 0,
-          totalAIQuestions: 0,
-          elo: 0,
-        );
-        await dataRepository.createRow(
-          rowId: _authProvider.currentUser!.id,
+      Row? row;
+      try {
+        row = await dataRepository.getRow(
           tableId: 'user_profiles',
-          data: {
-            'progLanguage': 'not selected',
-            'username': _authProvider.currentUser!.name,
-            'experience': 500,
-            'totalPoints': 0,
-            'earnedBadges': [],
-            'bio': '',
-            'imageId': '',
-            'difficulty': 'Intermediate',
-            'nbMission': 0,
-            'badgesProgress': jsonEncode({
-              'debug': 0, 'complete': 0, 'multipleChoice': 0,
-              'ordering': 0, 'singleChoice': 0, 'test': 0,
-            }),
-            'nbMissionCompletedWithoutHints': 0,
-            'totalFailures': 0,
-            'totalAIQuestions': 0,
-            'elo': 0,
-          },
+          rowId: _authProvider.currentUser!.id,
         );
-        return; 
+      } on AppwriteException catch (e) {
+        if (e.code == 404) {
+          debugPrint('DataProvider.getUserInfo - no profile, first login');
+          isFirstLogin = true;
+          progress = _emptyUserInfo();
+          await dataRepository.createRow(
+            rowId: _authProvider.currentUser!.id,
+            tableId: 'user_profiles',
+            data: {
+              'progLanguage': 'not selected',
+              'username': _authProvider.currentUser!.name,
+              'experience': 500,
+              'totalPoints': 0,
+              'earnedBadges': [],
+              'bio': '',
+              'imageId': '',
+              'difficulty': 'Intermediate',
+              'nbMission': 0,
+              'badgesProgress': jsonEncode({
+                'debug': 0,
+                'complete': 0,
+                'multipleChoice': 0,
+                'ordering': 0,
+                'singleChoice': 0,
+                'test': 0,
+              }),
+              'nbMissionCompletedWithoutHints': 0,
+              'totalFailures': 0,
+              'totalAIQuestions': 0,
+              'elo': 0,
+            },
+          );
+          return;
+        }
+        rethrow;
       }
-      rethrow;
-    }
 
-   
-    final int rank = await getRank();
-    isFirstLogin = row.data['isFirstLogin'] ?? true;
-    progress = UserInfo(
-      progLanguage: row.data['progLanguage'] ?? 'not selected',
-      username: _authProvider.currentUser!.name,
-      experience: row.data['experience'],
-      totalPoints: row.data['totalPoints'],
-      earnedBadges: List<String>.from(row.data['earnedBadges'] ?? []),
-      bio: row.data['bio'],
-      imageId: row.data['imageId'],
-      email: _authProvider.currentUser!.email,
-      rank: rank,
-      difficultySelected: row.data['difficulty'] ?? 'Intermediate',
-      nbMissions: row.data['nbMission'] ?? 0,
-      missions: await getMissions(),
-      badgesProgress: row.data['badgesProgress'] != null
-          ? jsonDecode(row.data['badgesProgress'])
-          : {},
-      showingBadges: [],
-      nbMissionCompletedWithoutHints:
-          row.data['nbMissionCompletedWithoutHints'] ?? 0,
-      totalFailures: row.data['totalFailures'] ?? 0,
-      totalAIQuestions: row.data['totalAIQuestions'] ?? 0,
-      elo: row.data['elo'],
-    ); 
-    try {
-      await getuserGoals(); 
-    } on AppwriteException catch (e) {
-      if (e.code == 404) {
-        debugPrint('DataProvider.getUserInfo - no user_goals, sending to onboarding');
-        isFirstLogin = true;
-        return; 
+      final int rank = await getRank();
+
+      progress = UserInfo(
+        progLanguage: row.data['progLanguage'] ?? 'not selected',
+        username: _authProvider.currentUser!.name,
+        experience: row.data['experience'],
+        totalPoints: row.data['totalPoints'],
+        earnedBadges: List<String>.from(row.data['earnedBadges'] ?? []),
+        bio: row.data['bio'],
+        imageId: row.data['imageId'],
+        email: _authProvider.currentUser!.email,
+        rank: rank,
+        difficultySelected: row.data['difficulty'] ?? 'Intermediate',
+        nbMissions: row.data['nbMission'] ?? 0,
+        missions: await getMissions(),
+        badgesProgress: row.data['badgesProgress'] != null
+            ? jsonDecode(row.data['badgesProgress'])
+            : {},
+        showingBadges: [],
+        nbMissionCompletedWithoutHints:
+            row.data['nbMissionCompletedWithoutHints'] ?? 0,
+        totalFailures: row.data['totalFailures'] ?? 0,
+        totalAIQuestions: row.data['totalAIQuestions'] ?? 0,
+        elo: row.data['elo'],
+      );
+      try {
+        await getuserGoals();
+      } on AppwriteException catch (e) {
+        if (e.code == 404) {
+          debugPrint(
+              'DataProvider.getUserInfo - no user_goals, sending to onboarding');
+          isFirstLogin = true;
+          return;
+        }
+        rethrow;
       }
+      try {
+        path = await fetchLearningPath(_authProvider.currentUser!.id);
+      } on AppwriteException catch (e) {
+        if (e.code != 404) rethrow;
+        //TODO Call for creating LP
+        debugPrint('DataProvider.getUserInfo - no learning path yet');
+      }
+    } catch (e) {
+      debugPrint('DataProvider.getUserInfo - error: $e');
       rethrow;
+    } finally {
+      notifyListeners();
     }
-    try {
-      path = await fetchLearningPath(_authProvider.currentUser!.id);
-    } on AppwriteException catch (e) {
-      if (e.code != 404) rethrow;
-      //TODO Call for creating LP
-      debugPrint('DataProvider.getUserInfo - no learning path yet');
-    }
-  } catch (e) {
-    debugPrint('DataProvider.getUserInfo - error: $e');
-    rethrow;
-  } finally {
-    notifyListeners();
   }
-}
 
   Future<void> getuserGoals() async {
     final row = await dataRepository.getRow(
@@ -338,7 +313,6 @@ Future<void> getUserInfo() async {
     try {
       late RowList response;
       String date = DateTime.now().toUtc().toIso8601String().split('T').first;
-      print(date);
 
       response = await dataRepository.getRows(
         tableId: 'missions',
@@ -370,8 +344,8 @@ Future<void> getUserInfo() async {
       }
 
       return response.rows.map((doc) {
-        final MissionType type =
-            MissionType.values.firstWhere((e) => e.name.contains(doc.data['type']));
+        final MissionType type = MissionType.values
+            .firstWhere((e) => e.name.contains(doc.data['type']));
         switch (type) {
           case MissionType.complete:
             return Mission.completeMission(doc);
@@ -390,26 +364,6 @@ Future<void> getUserInfo() async {
     } catch (e) {
       debugPrint('DataProvider.getMissions - error: $e');
       rethrow;
-    }
-  }
-
-  Future<Mission> loadMissions(String id) async {
-    final mission = await dataRepository.getRow(tableId: 'missions', rowId: id);
-    final MissionType type =
-        MissionType.values.firstWhere((e) => e.name.contains(mission.data['type']));
-    switch (type) {
-      case MissionType.complete:
-        return Mission.completeMission(mission);
-      case MissionType.debug:
-        return Mission.debugMission(mission);
-      case MissionType.multipleChoice:
-        return Mission.multipleChoice(mission);
-      case MissionType.ordering:
-        return Mission.ordering(mission);
-      case MissionType.singleChoice:
-        return Mission.singleChoice(mission);
-      case MissionType.test:
-        return Mission.testMission(mission);
     }
   }
 
@@ -512,34 +466,6 @@ Future<void> getUserInfo() async {
       }
       await updateRate(missionDifficulty, missionPoints, rate);
       await checkbadges(missionNb!);
-      notifyListeners();
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  Future<void> updateMissionStatusLP(String id, double rate) async {
-    try {
-      await dataRepository.updateRow(
-        tableId: 'missions',
-        rowId: id,
-        data: {'isCompleted': true, 'rate': rate},
-      );
-      progress.nbMissions += 1;
-      await dataRepository.updateRow(
-        tableId: 'user_profiles',
-        rowId: _authProvider.currentUser!.id,
-        data: {'nbMission': progress.nbMissions},
-      );
-      int missionDifficulty = 0;
-      int missionPoints = 0;
-      for (int i = 0; i < progress.missions.length; i++) {
-        if (progress.missions[i].id == id) {
-          progress.missions[i].isCompleted.value = true;
-          missionDifficulty = progress.missions[i].difficulty;
-        }
-      }
-      await updateRate(missionDifficulty, missionPoints, rate);
       notifyListeners();
     } catch (e) {
       rethrow;
@@ -767,26 +693,7 @@ Future<void> getUserInfo() async {
     }
   }
 
-  Future<void> updateDifficultySelected(String difficultySelected) async {
-    try {
-      progress.difficultySelected = difficultySelected;
-      notifyListeners();
-      await dataRepository.updateRow(
-        tableId: 'user_goals',
-        rowId: _authProvider.currentUser!.id,
-        data: {'difficulty': difficultySelected},
-      );
-      await dataRepository.updateRow(
-        tableId: 'user_profiles',
-        rowId: _authProvider.currentUser!.id,
-        data: {'difficulty': difficultySelected},
-      );
-    } catch (e) {
-      rethrow;
-    }
-  }
 
-  // ─── Learning Path ────────────────────────────────────────────────────────
 
   Future<LearningPath?> fetchLearningPath(String learningPathId) async {
     try {
@@ -811,8 +718,8 @@ Future<void> getUserInfo() async {
       ]);
 
       final missions = results[2].rows.map((doc) {
-        final MissionType type =
-            MissionType.values.firstWhere((e) => e.name.contains(doc.data['type']));
+        final MissionType type = MissionType.values
+            .firstWhere((e) => e.name.contains(doc.data['type']));
         switch (type) {
           case MissionType.complete:
             return Mission.completeMission(doc);
@@ -829,8 +736,10 @@ Future<void> getUserInfo() async {
         }
       }).toList();
 
-      final concepts =
-          results[0].rows.map((d) => Concept.fromJson(d.data, missions)).toList();
+      final concepts = results[0]
+          .rows
+          .map((d) => Concept.fromJson(d.data, missions))
+          .toList();
 
       final milestones = results[1]
           .rows
