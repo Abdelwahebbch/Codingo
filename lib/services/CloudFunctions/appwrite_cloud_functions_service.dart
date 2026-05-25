@@ -35,11 +35,11 @@ class AppwritecloudfunctionsService extends ChangeNotifier {
   static Future<void> createLearningPath(
       {required String id,
       required String progLang,
-      required String desc}) async {
+      required Map<String, dynamic> desc}) async {
     try {
       await http.post(
           Uri.parse('https://69c8037600042b81ce1b.fra.appwrite.run/'),
-          body: jsonEncode({"progLang": progLang, "userId": id, "desc": desc}));
+          body: jsonEncode({"progLang": progLang,"desc": desc , "userId": id}));
     } catch (e) {
       debugPrint("Error when create learning path $e");
       rethrow;

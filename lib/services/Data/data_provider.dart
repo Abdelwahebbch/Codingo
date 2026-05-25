@@ -289,13 +289,16 @@ class DataProvider extends ChangeNotifier {
       try {
         path = await fetchLearningPath(_authProvider.currentUser!.id);
       } on AppwriteException catch (e) {
-        if (e.code != 404) rethrow;
-        //TODO Call for creating LP
-        AppwritecloudfunctionsService.createLearningPath(
-            id: authProvider.currentUser!.id,
-            desc:userGoals!["prompt"] ??"",
-            progLang: progress.progLanguage);
-        debugPrint('DataProvider.getUserInfo - no learning path yet');
+        if (e.code == 404) {
+          //TODO Call for creating LP
+          print("Aloooo 1");
+          AppwritecloudfunctionsService.createLearningPath(
+              id: authProvider.currentUser!.id,
+              desc: userGoals! ,
+              progLang: progress.progLanguage);
+          print("Aloooo 2");
+          debugPrint('DataProvider.getUserInfo - no learning path yet');
+        }
       }
     } catch (e) {
       debugPrint('DataProvider.getUserInfo - error: $e');
@@ -762,7 +765,7 @@ class DataProvider extends ChangeNotifier {
       );
     } catch (e) {
       debugPrint('DataProvider.fetchLearningPath - error: $e');
-      return null;
+      rethrow;
     }
   }
 
