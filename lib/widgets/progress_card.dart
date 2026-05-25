@@ -30,11 +30,11 @@ class ProgressCard extends StatelessWidget {
         } catch (e) {
           showDialog(
               context: context,
-              builder: (context) => AlertDialog(
-                    icon: const Icon(Icons.info),
+              builder: (context) => const AlertDialog(
+                    icon: Icon(Icons.info),
                     title: Text(
-                      "$e",
-                      style: const TextStyle(fontSize: 12),
+                      "No Learning Path !",
+                      style: TextStyle(fontSize: 12),
                     ),
                   ));
         }
