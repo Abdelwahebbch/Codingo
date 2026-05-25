@@ -23,7 +23,7 @@ class ProgressCard extends StatelessWidget {
             context,
             MaterialPageRoute(
               builder: (context) => LearningPathScreen(
-                learningPath: learningPath!,
+                learningPath: learningPath,
               ),
             ),
           );
