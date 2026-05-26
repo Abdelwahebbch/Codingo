@@ -199,6 +199,8 @@ class DataProvider extends ChangeNotifier {
           },
         );
       }
+      
+      progress.missions= await getMissions();
     } catch (e) {
       debugPrint('DataProvider.completeOnboarding - error: $e');
       rethrow;
