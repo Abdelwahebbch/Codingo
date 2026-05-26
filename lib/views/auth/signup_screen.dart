@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:pfe_test/services/Auth/auth_provider.dart';
+import 'package:pfe_test/services/Data/data_provider.dart';
 import 'package:pfe_test/theme/app_theme.dart';
 import 'package:pfe_test/views/dashboard/dashboard_screen.dart';
+import 'package:pfe_test/views/onboarding/onboarding_screen.dart';
 
 import 'package:provider/provider.dart';
 
@@ -18,7 +22,7 @@ class _SignupScreenState extends State<SignupScreen> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
       TextEditingController();
-
+  bool _isSubmitting = false;
   @override
   void dispose() {
     _nameController.dispose();
@@ -27,26 +31,61 @@ class _SignupScreenState extends State<SignupScreen> {
     _confirmPasswordController.dispose();
     super.dispose();
   }
+  
+  Future<void> _waitForData(DataProvider dataProvider) {
+    final completer = Completer<void>();
+    void listener() {
+      if (!dataProvider.isLoading) {
+        dataProvider.removeListener(listener);
+        if (!completer.isCompleted) completer.complete();
+      }
+    }
+    dataProvider.addListener(listener);
+    if (!dataProvider.isLoading && !completer.isCompleted) {
+      dataProvider.removeListener(listener);
+      completer.complete();
+    }
+    return completer.future;
+  }
 
+  void _navigateAfterLoad(BuildContext context, DataProvider dataProvider) {
+    if (dataProvider.isFirstLogin) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const OnboardingScreen()),
+      );
+    } else {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const DashboardScreen()),
+      );
+    }
+  }
   void _handleSignup() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final dataProvider = Provider.of<DataProvider>(context, listen: false);
     if (_passwordController.text != _confirmPasswordController.text) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Passwords do not match")),
       );
       return;
     }
-
+    setState(() => _isSubmitting = true);
     try {
-      await Provider.of<AuthProvider>(context, listen: false).signUp(
+      
+      await authProvider.signUp(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
         name: _nameController.text.trim(),
       );
       
       if (!mounted) return;
+      if (dataProvider.isLoading) {
+        await _waitForData(dataProvider);
+      }
+      if (!mounted) return;
+      _navigateAfterLoad(context, dataProvider);
 
-      Navigator.pushReplacement(
-          context, MaterialPageRoute(builder: (context) => const DashboardScreen()));
     } catch (e) {
       _showErrorDialog("Signup failed: ${e.toString()}");
     }
