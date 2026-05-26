@@ -35,7 +35,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     super.initState();
     final authservice = Provider.of<DataProvider>(context, listen: false);
     username = authservice.authProvider.currentUser?.name ?? '';
-    List<String> badges = [];
+    List<String> badges = authservice.progress.showingBadges;
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       showNotif(badges);
       authservice.emptyShowingBadges();
