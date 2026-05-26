@@ -22,6 +22,7 @@ class _SmartOnboardingScreenState extends State<OnboardingScreen> {
   DateTime? endDate;
   int questionsLen = 1;
   bool _isLoading = false;
+  bool isLanching = false;
   @override
   void initState() {
     super.initState();
@@ -85,7 +86,7 @@ class _SmartOnboardingScreenState extends State<OnboardingScreen> {
     final authService = Provider.of<DataProvider>(context, listen: false);
     // final fnService = Provider.of<AppwritecloudfunctionsService>(context, listen: false);
     await authService.updateLanguageSelected("Python");
-    await authService.completeOnboarding(answers, false,null,null);
+    await authService.completeOnboarding(answers, false, null, null);
     await authService.getUserInfo();
   }
 
@@ -96,9 +97,12 @@ class _SmartOnboardingScreenState extends State<OnboardingScreen> {
       "student_objective_": "Learn the basics",
       "commitment": "☕ 15-30 min"
     };
+    setState(() {
+      isLanching = true;
+    });
+    await _waiting(answers);
     Navigator.pushReplacement(context,
         MaterialPageRoute(builder: (context) => const DashboardScreen()));
-    _waiting(answers );
   }
 
   Future<void> _saveUserChoices() async {
@@ -111,8 +115,10 @@ class _SmartOnboardingScreenState extends State<OnboardingScreen> {
         Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-                builder: (context) =>
-                    LanguageSelectionScreen(answers: _answers,startDate : startDate,endDate : endDate)));
+                builder: (context) => LanguageSelectionScreen(
+                    answers: _answers,
+                    startDate: startDate,
+                    endDate: endDate)));
       }
     } catch (e) {
       debugPrint("Error when saving choices $e");
@@ -153,7 +159,15 @@ class _SmartOnboardingScreenState extends State<OnboardingScreen> {
                         onTap: () async {
                           await _skip();
                         },
-                        child: const Text("Skip"),
+                        child: isLanching
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Text("Skip"),
                       ),
                   ],
                 ),

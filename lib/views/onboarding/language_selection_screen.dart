@@ -7,8 +7,9 @@ import '../dashboard/dashboard_screen.dart';
 class LanguageSelectionScreen extends StatefulWidget {
   final Map<String, String> answers;
   final DateTime? startDate;
-  final DateTime? endDate; 
-  const LanguageSelectionScreen({super.key, required this.answers, this.startDate, this.endDate});
+  final DateTime? endDate;
+  const LanguageSelectionScreen(
+      {super.key, required this.answers, this.startDate, this.endDate});
 
   @override
   State<LanguageSelectionScreen> createState() =>
@@ -25,6 +26,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
     {'name': 'Java', 'icon': Icons.coffee, 'color': Colors.orange},
     {'name': 'C++', 'icon': Icons.terminal, 'color': Colors.blueAccent},
   ];
+  bool isLoading = false;
 
   @override
   void initState() {
@@ -37,8 +39,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
     if (widget.answers["journey"] == "Self-Taught Explorer") {
       if (widget.answers["explorer_objective"] ==
           "Build my own apps or websites") {
-        if (widget.answers["student_objective_"] ==
-            "Learn the basics_") {
+        if (widget.answers["student_objective_"] == "Learn the basics_") {
           languages.removeAt(0);
           selectedLanguage = "JavaScript";
         }
@@ -141,10 +142,13 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
                     onPressed: selectedLanguage == null
                         ? null
                         : () async {
-                            authService
+                            setState(() {
+                              isLoading = true;
+                            });
+                            await authService
                                 .updateLanguageSelected(selectedLanguage!);
-                            authService.completeOnboarding(
-                                widget.answers, true,widget.startDate,widget.endDate);
+                            await authService.completeOnboarding(widget.answers,
+                                true, widget.startDate, widget.endDate);
                             await authService.getUserInfo();
                             Navigator.pushReplacement(
                                 context,
@@ -155,7 +159,18 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
-                    child: const Text("START LEARNING"),
+                    child: isLoading
+                        ? const Center(
+                            child: const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.grey,
+                                ),
+                              )
+                          )
+                        : const Text("START LEARNING"),
                   ),
                 ),
               ],
