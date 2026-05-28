@@ -1,5 +1,7 @@
 import 'package:appwrite/appwrite.dart';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:pfe_test/models/party_model.dart';
 import 'package:pfe_test/services/CloudFunctions/appwrite_cloud_functions_service.dart';
 import 'package:pfe_test/services/Data/party_data_provider.dart';
@@ -59,13 +61,13 @@ class _PartyLobbyScreenState extends State<PartyLobbyScreen> {
           quizs = [];
         } else {
           await authService.partyPlayAgain();
-          if(_party.hostId == authService.authProvider.currentUser!.id) {
+          if (_party.hostId == authService.authProvider.currentUser!.id) {
             ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                  'Oops! Something went wrong while preparing your quiz. Please try again or later.'),
-            ),
-          );
+              const SnackBar(
+                content: Text(
+                    'Oops! Something went wrong while preparing your quiz. Please try again or later.'),
+              ),
+            );
           }
         }
       }
@@ -108,7 +110,7 @@ class _PartyLobbyScreenState extends State<PartyLobbyScreen> {
           authService.deleteMemberFromLocal(row["userId"]);
         });
         if (((!isHost && row["userId"] == _party.hostId) ||
-                row["userId"] ==  authService.authProvider.currentUser!.id) &&
+                row["userId"] == authService.authProvider.currentUser!.id) &&
             mounted) {
           Navigator.pushAndRemoveUntil(
             context,
@@ -178,7 +180,9 @@ class _PartyLobbyScreenState extends State<PartyLobbyScreen> {
     }
   }
 
-  void _copyPartyCode() {
+  void _copyPartyCode() async {
+    await Clipboard.setData(ClipboardData(text: _party.partyCode));
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Party code copied: ${_party.partyCode}'),
@@ -191,7 +195,7 @@ class _PartyLobbyScreenState extends State<PartyLobbyScreen> {
   Widget build(BuildContext context) {
     final authService = Provider.of<PartyDataProvider>(context, listen: false);
     _isReady = authService.partyMember.isReady;
-    final themeManager = Provider.of<ThemeManager>(context,listen: true);
+    final themeManager = Provider.of<ThemeManager>(context, listen: true);
     final isDark = themeManager.themeMode == ThemeMode.dark;
     return SafeArea(
       child: PopScope(
@@ -252,7 +256,8 @@ class _PartyLobbyScreenState extends State<PartyLobbyScreen> {
                                 .textTheme
                                 .titleLarge
                                 ?.copyWith(
-                                  fontWeight: FontWeight.bold,color:  Colors.white ,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
                                 ),
                           ),
 
@@ -291,7 +296,8 @@ class _PartyLobbyScreenState extends State<PartyLobbyScreen> {
                       _party.partyName,
                       style:
                           Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                fontWeight: FontWeight.bold,color: isDark ? Colors.white : Colors.black87,
+                                fontWeight: FontWeight.bold,
+                                color: isDark ? Colors.white : Colors.black87,
                               ),
                     ),
                     const SizedBox(height: 8),
@@ -305,8 +311,12 @@ class _PartyLobbyScreenState extends State<PartyLobbyScreen> {
                         const SizedBox(width: 5),
                         Text(
                           'Host: ${_party.hostName}',
-                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                fontSize: 10,color: isDark ? Colors.white : Colors.black87,
+                          style: Theme.of(context)
+                              .textTheme
+                              .headlineSmall
+                              ?.copyWith(
+                                fontSize: 10,
+                                color: isDark ? Colors.white : Colors.black87,
                               ),
                         ),
                       ],
@@ -348,7 +358,8 @@ class _PartyLobbyScreenState extends State<PartyLobbyScreen> {
                         'Players (${_party.memberCount}/${_party.maxMembers})',
                         style:
                             Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,color: isDark ? Colors.white : Colors.black87,
+                                  fontWeight: FontWeight.bold,
+                                  color: isDark ? Colors.white : Colors.black87,
                                 ),
                       ),
                       const SizedBox(height: 15),
