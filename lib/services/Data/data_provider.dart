@@ -199,8 +199,8 @@ class DataProvider extends ChangeNotifier {
           },
         );
       }
-      
-      progress.missions= await getMissions();
+
+      progress.missions = await getMissions();
     } catch (e) {
       debugPrint('DataProvider.completeOnboarding - error: $e');
       rethrow;
@@ -296,7 +296,7 @@ class DataProvider extends ChangeNotifier {
           print("Aloooo 1");
           AppwritecloudfunctionsService.createLearningPath(
               id: authProvider.currentUser!.id,
-              desc: userGoals! ,
+              desc: userGoals!,
               progLang: progress.progLanguage);
           print("Aloooo 2");
           debugPrint('DataProvider.getUserInfo - no learning path yet');
@@ -778,7 +778,7 @@ class DataProvider extends ChangeNotifier {
       await Future.wait([
         ...path!.concepts.map((c) => _saveConcept(c, learningPathId)),
         ...path!.milestones.map((m) => _saveMilestone(m, learningPathId)),
-        ...path!.missions.map((ms) => _saveMission(ms, learningPathId)),
+        ...path!.missions.map((ms) => saveMission(ms, learningPathId)),
       ]);
       await fetchLearningPath(path!.id);
       debugPrint('LearningPath saved successfully (id: $learningPathId)');
@@ -830,14 +830,14 @@ class DataProvider extends ChangeNotifier {
     );
   }
 
-  Future<void> _saveMission(Mission mission, String learningPathId) async {
-    await dataRepository.updateRow(
-      tableId: 'learning_path_missions',
-      rowId: mission.id,
-      data: {
-        'isCompleted': mission.isCompleted,
-        'Surrendered': mission.isSurrendered,
-      },
-    );
+  Future<void> saveMission(Mission mission, String learningPathId) async {
+      await dataRepository.updateRow(
+        tableId: 'learning_path_missions',
+        rowId: mission.id,
+        data: {
+          'isCompleted': mission.isCompleted.value,
+          'Surrendered': mission.isSurrendered,
+        },
+      );
   }
 }
