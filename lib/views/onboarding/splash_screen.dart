@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:pfe_test/services/Auth/auth_provider.dart';
 import 'package:pfe_test/services/Data/data_provider.dart';
+import 'package:pfe_test/services/update/update_manager.dart';
 import 'package:pfe_test/theme/app_theme.dart';
 import 'package:pfe_test/views/auth/login_screen.dart';
 import 'package:pfe_test/views/dashboard/dashboard_screen.dart';
@@ -32,7 +33,10 @@ class _SplashScreenState extends State<SplashScreen>
     _controller.forward();
 
     // Wait for the first frame to be painted before reading providers.
-    WidgetsBinding.instance.addPostFrameCallback((_) => _decideRoute());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      UpdateManager.checkForUpdate(context);
+      _decideRoute();
+    });
   }
 
   Future<void> _decideRoute() async {
@@ -66,7 +70,7 @@ class _SplashScreenState extends State<SplashScreen>
 
     if (!mounted) return;
 
-   _navigateAfterLoad(context, dataProvider);
+    _navigateAfterLoad(context, dataProvider);
   }
 
   /// Returns a Future that completes as soon as [DataProvider.isLoading]
@@ -79,6 +83,7 @@ class _SplashScreenState extends State<SplashScreen>
         if (!completer.isCompleted) completer.complete();
       }
     }
+
     dataProvider.addListener(listener);
     // Safety net: already done before the listener was attached.
     if (!dataProvider.isLoading && !completer.isCompleted) {
@@ -87,19 +92,21 @@ class _SplashScreenState extends State<SplashScreen>
     }
     return completer.future;
   }
-void _navigateAfterLoad(BuildContext context, DataProvider dataProvider) {
-  if (dataProvider.isFirstLogin) {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => const OnboardingScreen()),
-    );
-  } else {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => const DashboardScreen()),
-    );
+
+  void _navigateAfterLoad(BuildContext context, DataProvider dataProvider) {
+    if (dataProvider.isFirstLogin) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const OnboardingScreen()),
+      );
+    } else {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const DashboardScreen()),
+      );
+    }
   }
-}
+
   @override
   void dispose() {
     _controller.dispose();
