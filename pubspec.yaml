@@ -1,6 +1,6 @@
 name: pfe_test
 description: A gamified AI tutor for software engineering.
-version: 2.1.0+8
+version: 2.3.2+12
 
 environment:
   sdk: '>=3.0.0 <4.0.0'

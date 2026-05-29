@@ -15,11 +15,11 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   late int rank;
-  bool isReady = false;
+  bool isReady = true;
 
   Future<void> getRank() async {
     final authService = Provider.of<DataProvider>(context, listen: false);
-    rank = await authService.getRank();
+    rank =  authService.progress.rank;
     setState(() {
       isReady = true;
     });
@@ -28,7 +28,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
-    getRank();
+    final authService = Provider.of<DataProvider>(context, listen: false);
+
+    rank =  authService.progress.rank;
   }
 
   @override
@@ -68,9 +70,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   MaterialPageRoute(builder: (_) => const LoginScreen()),
                   (route) => false,
                 );
-
-                // Sign out after navigation — DataProvider will self-clear via its
-                // AuthProvider listener, but no mounted widget will be affected.
                 await auth.signOut();
               },
             ),

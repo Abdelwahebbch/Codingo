@@ -94,13 +94,13 @@ class _MissionDetailScreenState extends State<MissionDetailScreen> {
                                 barrierDismissible: false,
                                 builder: (context) => AlertDialog(
                                   title: Center(
-                                    child: Text(
-                                  "Warning !",
-                                  style: TextStyle(
-                                      color: isDark
-                                          ? Colors.white
-                                          : Colors.black87),
-                                )),
+                                      child: Text(
+                                    "Warning !",
+                                    style: TextStyle(
+                                        color: isDark
+                                            ? Colors.white
+                                            : Colors.black87),
+                                  )),
                                   content: const Text(
                                       "Are you sure you want to surrender?"),
                                   actions: [
@@ -200,11 +200,13 @@ class _MissionDetailScreenState extends State<MissionDetailScreen> {
               child: CodeField(
             minLines: 20,
             controller: _codeController,
-            textStyle: TextStyle(color: isDark ? Colors.white : Colors.black87,),
-            decoration: BoxDecoration(
-              color: isDark ?   AppTheme.secondaryColor : Colors.white,
+            textStyle: TextStyle(
+              color: isDark ? Colors.white : Colors.black87,
             ),
-        )),
+            decoration: BoxDecoration(
+              color: isDark ? AppTheme.secondaryColor : Colors.white,
+            ),
+          )),
         );
       case MissionType.test:
         return Column(
@@ -227,10 +229,16 @@ class _MissionDetailScreenState extends State<MissionDetailScreen> {
                 border: Border.all(color: Colors.grey.shade800),
               ),
               child: SingleChildScrollView(
-                  child: CodeField(minLines: 20, controller: _codeController,textStyle: TextStyle(color: isDark ? Colors.white : Colors.black87,),
-            decoration: BoxDecoration(
-              color: isDark ?   AppTheme.secondaryColor : Colors.white,
-            ),)),
+                  child: CodeField(
+                minLines: 20,
+                controller: _codeController,
+                textStyle: TextStyle(
+                  color: isDark ? Colors.white : Colors.black87,
+                ),
+                decoration: BoxDecoration(
+                  color: isDark ? AppTheme.secondaryColor : Colors.white,
+                ),
+              )),
             ),
             const SizedBox(height: 8),
             const Text(
@@ -420,13 +428,12 @@ class _MissionDetailScreenState extends State<MissionDetailScreen> {
     } else if (!widget.isLearningPath) {
       authService.updateFailedNb(widget.mission.id);
     } else if (isCorrect && widget.isLearningPath) {
-      print("Wsoolna");
       setState(() {
         widget.mission.isCompleted.value = true;
-       
       });
+      authService.saveMission(widget.mission, widget.learningPath!.id);
 
-     // authService.saveLearningPath();
+      // authService.saveLearningPath();
       //authService.updateMissionStatus(widget.mission.id, rate);
     }
     if (!mounted) return;
