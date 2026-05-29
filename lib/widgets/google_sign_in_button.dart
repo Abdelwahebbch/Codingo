@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:pfe_test/services/Auth/auth_provider.dart';
 import 'package:pfe_test/services/Data/data_provider.dart';
 import 'package:pfe_test/views/dashboard/dashboard_screen.dart';
+import 'package:pfe_test/views/onboarding/onboarding_screen.dart';
 import 'package:provider/provider.dart';
 
 class GoogleSignInButton extends StatefulWidget {
@@ -28,13 +29,10 @@ class _GoogleSignInButtonState extends State<GoogleSignInButton> {
 
       if (!mounted) return;
 
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const DashboardScreen()),
-      );
+      if (!mounted) return;
+      _navigateAfterLoad(context, dataProvider);
     } catch (e) {
       if (mounted) {
-        print(e);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Google Sign-In failed")),
         );
@@ -50,14 +48,26 @@ class _GoogleSignInButtonState extends State<GoogleSignInButton> {
         if (!completer.isCompleted) completer.complete();
       }
     }
-
     dataProvider.addListener(listener);
-    // Guard: already done before we added the listener.
     if (!dataProvider.isLoading && !completer.isCompleted) {
       dataProvider.removeListener(listener);
       completer.complete();
     }
     return completer.future;
+  }
+
+  void _navigateAfterLoad(BuildContext context, DataProvider dataProvider) {
+    if (dataProvider.isFirstLogin) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const OnboardingScreen()),
+      );
+    } else {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const DashboardScreen()),
+      );
+    }
   }
 
   @override
