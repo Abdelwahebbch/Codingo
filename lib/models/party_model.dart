@@ -114,34 +114,6 @@ class Party {
     }
   }
 
-  factory Party.fromJson(Map<String, dynamic> json) {
-    return Party(
-        partyId: "1",
-        partyCode: "AB123AS",
-        partyName: "partyName",
-        hostId: "hostId",
-        hostName: "hostName");
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'partyId': "partyId",
-      'partyName': "partyName",
-      'hostId': "hostId",
-      'hostName': "hostName",
-      'members': ["1", "2"],
-      'missions': ["1", "2"],
-      'maxMembers': 10,
-      'currentMissionIndex': 1,
-      'isActive': true,
-      'isStarted': true,
-      'startedAt': startedAt?.toIso8601String(),
-      'endedAt': endedAt?.toIso8601String(),
-      'difficulty': difficulty,
-      'gameMode': gameMode,
-      'totalRounds': totalRounds,
-    };
-  }
 }
 
 class PartyResult {
