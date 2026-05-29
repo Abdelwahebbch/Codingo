@@ -176,8 +176,6 @@ class PartyDataProvider with ChangeNotifier {
 
   Future<void> quiteLobby(String? row) async {
     try {
-      print(party.hostId);
-      print(party.partyId);
       if (row == null) {
         if (party.hostId.contains(authProvider.currentUser!.id)) {
           await dataRepository.deleteRow(
