@@ -227,7 +227,7 @@ class DataProvider extends ChangeNotifier {
               'progLanguage': 'not selected',
               'username': _authProvider.currentUser!.name,
               'experience': 500,
-              'totalPoints': 0,
+              'totalPoints': 10,
               'earnedBadges': [],
               'bio': '',
               'imageId': '',
