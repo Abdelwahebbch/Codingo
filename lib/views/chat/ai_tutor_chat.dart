@@ -8,7 +8,6 @@ import 'package:pfe_test/services/Data/data_provider.dart';
 import 'package:pfe_test/theme/app_theme.dart';
 import 'package:provider/provider.dart';
 
-
 class AITutorChat extends StatefulWidget {
   final Mission mission;
   final ScrollController scrollController;
@@ -48,8 +47,8 @@ class _AITutorChatState extends State<AITutorChat> {
     }
     _scrollToBottom();
     _messageController.addListener(() {
-    setState(() {}); 
-  });
+      setState(() {});
+    });
   }
 
   @override
@@ -129,24 +128,26 @@ class _AITutorChatState extends State<AITutorChat> {
                 onPressed: () {
                   if (!isSending && _messageController.text.isNotEmpty) {
                     setState(() {
-                      isSending=true;
+                      isSending = true;
                     });
                     _sendMessage();
-                  }
-                  else{
+                  } else {
                     null;
                   }
                 },
-                backgroundColor: _messageController.text.isNotEmpty ? AppTheme.primaryColor  : Colors.grey,
-                child: !isSending 
+                backgroundColor: _messageController.text.isNotEmpty
+                    ? AppTheme.primaryColor
+                    : Colors.grey,
+                child: !isSending
                     ? (const Icon(Icons.send, color: Colors.white))
                     : const Padding(
-                      padding: EdgeInsets.all(10.0),
-                      child: CircularProgressIndicator(
+                        padding: EdgeInsets.all(10.0),
+                        child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Colors.white),
                         ),
-                    ),
+                      ),
               ),
             ],
           ),
@@ -156,6 +157,24 @@ class _AITutorChatState extends State<AITutorChat> {
   }
 
   void _sendMessage() async {
+    final dataProvider = Provider.of<DataProvider>(context, listen: false);
+    if (dataProvider.progress.totalPoints <= 0) {
+      isSending = false;
+      showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+                title: const Text(
+                  "Out of Ai Points",
+                ),
+                content: const Text("Keep playing to earn more points ;)"),
+                actions: [
+                  TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text("Got it"))
+                ],
+              ));
+      return;
+    }
     final authservice = Provider.of<DataProvider>(context, listen: false);
 
     if (_messageController.text.isEmpty) return;
@@ -169,12 +188,12 @@ class _AITutorChatState extends State<AITutorChat> {
       _messages.add(Message(role: "bot", message: "Thinking ..."));
     });
     _messageController.clear();
-      _scrollToBottom();
+    _scrollToBottom();
     final data = await AppwritecloudfunctionsService.sendMessage(m);
     setState(() {
       _messages.removeLast();
       _messages.add(Message(role: "bot", message: data["response"]));
-      isSending=false;
+      isSending = false;
     });
     await authservice.updateMissionAiPoints(widget.mission.id);
     await authservice.addToConversation(
