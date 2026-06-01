@@ -39,8 +39,6 @@ void main() {
             authProvider: context.read<AuthProvider>(),
           ),
         ),
-
-        // ── Party ─────────────────────────────────────────────────────────
         ChangeNotifierProvider<PartyDataProvider>(
           create: (context) => PartyDataProvider(
             appwriteService: context.read<AppwriteService>(),
