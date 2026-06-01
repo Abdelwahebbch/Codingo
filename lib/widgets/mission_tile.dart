@@ -52,7 +52,6 @@ class MissionTile extends StatelessWidget {
               )
             : const Icon(Icons.chevron_right)),
         onTap: () {
-          //add if is it commplet
           if (!isComplete && !isSurrendered) {
             Navigator.push(
               context,

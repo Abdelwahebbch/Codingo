@@ -84,7 +84,6 @@ class _SmartOnboardingScreenState extends State<OnboardingScreen> {
 
   Future<void> _waiting(Map<String, String> answers) async {
     final authService = Provider.of<DataProvider>(context, listen: false);
-    // final fnService = Provider.of<AppwritecloudfunctionsService>(context, listen: false);
     await authService.updateLanguageSelected("Python");
     await authService.completeOnboarding(answers, false, null, null);
     await authService.getUserInfo();

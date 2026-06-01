@@ -263,7 +263,6 @@ class _PartyLobbyScreenState extends State<PartyLobbyScreen> {
 
                           const Spacer(),
 
-                          // Party code
                           Text(
                             "${_party.partyCode.substring(0, 3)} ${_party.partyCode.substring(3, 6)}",
                             style: Theme.of(context)
@@ -347,7 +346,6 @@ class _PartyLobbyScreenState extends State<PartyLobbyScreen> {
                 ),
               ),
 
-              // Members List
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.all(20),
@@ -552,7 +550,6 @@ class _PartyLobbyScreenState extends State<PartyLobbyScreen> {
                 ),
               ),
 
-              // Bottom Actions
               Padding(
                 padding: const EdgeInsets.all(20),
                 child: Column(
@@ -581,7 +578,7 @@ class _PartyLobbyScreenState extends State<PartyLobbyScreen> {
                     const SizedBox(height: 10),
                     if (_party.hostId ==
                         authService.authProvider.currentUser!
-                            .id) // Check if current user is host
+                            .id) 
                       SizedBox(
                         width: double.infinity,
                         height: 48,

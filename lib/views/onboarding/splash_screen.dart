@@ -30,24 +30,14 @@ class _SplashScreenState extends State<SplashScreen>
     );
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(_controller);
     _controller.forward();
-
-    // Wait for the first frame to be painted before reading providers.
     WidgetsBinding.instance.addPostFrameCallback((_) => _decideRoute());
   }
 
   Future<void> _decideRoute() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final dataProvider = Provider.of<DataProvider>(context, listen: false);
-
-    // ── 1. Wait for AuthProvider.init() to finish ──────────────────────────
-    // `initialized` is a Future<void> that completes exactly once, after the
-    // first auth check resolves.  No polling, no arbitrary delays.
     await authProvider.initialized;
-
-    // Guard: widget may have been disposed while we were waiting.
     if (!mounted) return;
-
-    // ── 2. Route based on confirmed auth status ────────────────────────────
     if (authProvider.status == AuthStatus.unauthenticated) {
       Navigator.pushReplacement(
         context,
@@ -55,11 +45,6 @@ class _SplashScreenState extends State<SplashScreen>
       );
       return;
     }
-
-    // ── 3. Authenticated – wait for DataProvider to finish loading ──────────
-    // DataProvider.init() was already triggered reactively by the auth-state
-    // change listener inside DataProvider itself.  We just wait for it here
-    // so the dashboard gets fully-loaded data on first paint.
     if (dataProvider.isLoading) {
       await _waitForDataProvider(dataProvider);
     }
@@ -68,9 +53,6 @@ class _SplashScreenState extends State<SplashScreen>
 
    _navigateAfterLoad(context, dataProvider);
   }
-
-  /// Returns a Future that completes as soon as [DataProvider.isLoading]
-  /// becomes false, without busy-waiting / polling.
   Future<void> _waitForDataProvider(DataProvider dataProvider) {
     final completer = Completer<void>();
     void listener() {
@@ -80,7 +62,6 @@ class _SplashScreenState extends State<SplashScreen>
       }
     }
     dataProvider.addListener(listener);
-    // Safety net: already done before the listener was attached.
     if (!dataProvider.isLoading && !completer.isCompleted) {
       dataProvider.removeListener(listener);
       completer.complete();

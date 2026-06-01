@@ -26,7 +26,6 @@ class _PartyQuizScreenState extends State<PartyQuizScreen> {
   bool _answered = false;
   int? answerIndex;
   late PartyMember partyMember;
-  // Mock questions
   List<Map<String, dynamic>> _questions = [];
 
   @override
@@ -67,7 +66,6 @@ class _PartyQuizScreenState extends State<PartyQuizScreen> {
         this.answerIndex = answerIndex;
       }
     });
-    // 7asben les point (local just pour le test )
     if (_timeRemaining == 0) {
       bool isCorrect = answerIndex ==
           _questions[(_currentRound - 1) % _questions.length]['correct'];
@@ -90,7 +88,6 @@ class _PartyQuizScreenState extends State<PartyQuizScreen> {
           });
           _startTimer();
         } else {
-          // Game finished
           await authService.submitAnswer(partyMember);
           if (!mounted) return;
           Navigator.pushReplacement(
@@ -169,7 +166,6 @@ class _PartyQuizScreenState extends State<PartyQuizScreen> {
                         ))
                   ],
                 ),
-                // Timer and Score Header
                 Container(
                   color: AppTheme.primaryColor.withValues(alpha: 0.1),
                   padding: const EdgeInsets.all(20),
@@ -221,7 +217,6 @@ class _PartyQuizScreenState extends State<PartyQuizScreen> {
                   ),
                 ),
       
-                // Question
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.all(20),
@@ -256,7 +251,6 @@ class _PartyQuizScreenState extends State<PartyQuizScreen> {
                         ),
                         const SizedBox(height: 30),
       
-                        // Answer Options
                         Expanded(
                           child: ListView.builder(
                             itemCount: currentQuestion['options'].length,
@@ -357,7 +351,6 @@ class _PartyQuizScreenState extends State<PartyQuizScreen> {
                   ),
                 ),
       
-                // Progress Bar
                 Padding(
                   padding: const EdgeInsets.all(20),
                   child: Column(
