@@ -431,11 +431,8 @@ class _MissionDetailScreenState extends State<MissionDetailScreen> {
       });
       authService.saveMission(widget.mission, widget.learningPath!.id);
 
-<<<<<<< Updated upstream
       // authService.saveLearningPath();
       //authService.updateMissionStatus(widget.mission.id, rate);
-=======
->>>>>>> Stashed changes
     }
     if (!mounted) return;
     showDialog(
