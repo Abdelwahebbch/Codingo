@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:appwrite/appwrite.dart';
 import 'package:flutter/material.dart';
 import 'package:pfe_test/services/Auth/auth_provider.dart';
 import 'package:pfe_test/services/Data/data_provider.dart';
@@ -31,7 +32,7 @@ class _SignupScreenState extends State<SignupScreen> {
     _confirmPasswordController.dispose();
     super.dispose();
   }
-  
+
   Future<void> _waitForData(DataProvider dataProvider) {
     final completer = Completer<void>();
     void listener() {
@@ -40,6 +41,7 @@ class _SignupScreenState extends State<SignupScreen> {
         if (!completer.isCompleted) completer.complete();
       }
     }
+
     dataProvider.addListener(listener);
     if (!dataProvider.isLoading && !completer.isCompleted) {
       dataProvider.removeListener(listener);
@@ -61,9 +63,28 @@ class _SignupScreenState extends State<SignupScreen> {
       );
     }
   }
+
   void _handleSignup() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final dataProvider = Provider.of<DataProvider>(context, listen: false);
+    final dataProvider = Provider.of<DataProvider>(context, listen: false);
+    if (_nameController.text.isEmpty){
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Name is required.")),
+      );
+      return;
+    }
+    if (_emailController.text.isEmpty){
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Email is required.")),
+      );
+      return;
+    }
+    if (_passwordController.text.isEmpty){
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Password is required.")),
+      );
+      return;
+    }
     if (_passwordController.text != _confirmPasswordController.text) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Passwords do not match")),
@@ -72,22 +93,24 @@ class _SignupScreenState extends State<SignupScreen> {
     }
     setState(() => _isSubmitting = true);
     try {
-      
       await authProvider.signUp(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
         name: _nameController.text.trim(),
       );
-      
+
       if (!mounted) return;
       if (dataProvider.isLoading) {
         await _waitForData(dataProvider);
       }
       if (!mounted) return;
       _navigateAfterLoad(context, dataProvider);
-
+    } on AppwriteException catch (e) {
+      if(e.code == 409){
+        _showErrorDialog("Signup failed: This email is already registered.");
+      }
     } catch (e) {
-      _showErrorDialog("Signup failed: ${e.toString()}");
+      _showErrorDialog("Signup failed: Please check your information and try again.");
     }
   }
 

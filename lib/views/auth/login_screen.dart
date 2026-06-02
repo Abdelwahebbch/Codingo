@@ -49,6 +49,18 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final dataProvider = Provider.of<DataProvider>(context, listen: false);
+      if (_emailController.text.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Email is required.")),
+        );
+        return;
+      }
+      if (_passwordController.text.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Password is required.")),
+        );
+        return;
+      }
       await authProvider.signIn(
         email: _emailController.text.trim(),
         password: _passwordController.text,
@@ -60,11 +72,12 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
       _navigateAfterLoad(context, dataProvider);
     } catch (e) {
-      if (mounted) _showErrorDialog('$e');
+      if (mounted) _showErrorDialog('Invalid credentials. Please check the email and password.');
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
   }
+
   Future<void> _waitForData(DataProvider dataProvider) {
     final completer = Completer<void>();
     void listener() {
@@ -73,6 +86,7 @@ class _LoginScreenState extends State<LoginScreen> {
         if (!completer.isCompleted) completer.complete();
       }
     }
+
     dataProvider.addListener(listener);
     if (!dataProvider.isLoading && !completer.isCompleted) {
       dataProvider.removeListener(listener);
