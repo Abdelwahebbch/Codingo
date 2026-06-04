@@ -58,10 +58,10 @@ class DataProvider extends ChangeNotifier {
     super.dispose();
   }
 
-  bool _isInitializing = false; 
+  bool _isInitializing = false;
 
   Future<void> init() async {
-    if (_isInitializing) return; 
+    if (_isInitializing) return;
     _isInitializing = true;
     _isLoading = true;
     notifyListeners();
@@ -429,13 +429,30 @@ class DataProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> updateMissionStatus(String id, double rate) async {
+  Future<void> updateMissionStatus(
+      String id, double rate, String? code, String? output) async {
     try {
-      await dataRepository.updateRow(
-        tableId: 'missions',
-        rowId: id,
-        data: {'isCompleted': true, 'rate': rate},
-      );
+      if (code != null) {
+        await dataRepository.updateRow(
+          tableId: 'missions',
+          rowId: id,
+          data: {'isCompleted': true, 'rate': rate,'solution': code},
+        );
+      }
+      else if(output!=null){
+        await dataRepository.updateRow(
+          tableId: 'missions',
+          rowId: id,
+          data: {'isCompleted': true, 'rate': rate,'solution': output},
+        );
+      }
+      else {
+        await dataRepository.updateRow(
+          tableId: 'missions',
+          rowId: id,
+          data: {'isCompleted': true, 'rate': rate},
+        );
+      }
       progress.nbMissions += 1;
       await dataRepository.updateRow(
         tableId: 'user_profiles',
@@ -809,13 +826,13 @@ class DataProvider extends ChangeNotifier {
   }
 
   Future<void> saveMission(Mission mission, String learningPathId) async {
-      await dataRepository.updateRow(
-        tableId: 'learning_path_missions',
-        rowId: mission.id,
-        data: {
-          'isCompleted': mission.isCompleted.value,
-          'Surrendered': mission.isSurrendered,
-        },
-      );
+    await dataRepository.updateRow(
+      tableId: 'learning_path_missions',
+      rowId: mission.id,
+      data: {
+        'isCompleted': mission.isCompleted.value,
+        'Surrendered': mission.isSurrendered,
+      },
+    );
   }
 }

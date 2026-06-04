@@ -422,7 +422,15 @@ class _MissionDetailScreenState extends State<MissionDetailScreen> {
 
     if (isCorrect && !widget.isLearningPath) {
       authService.updateXp(widget.mission.points);
-      authService.updateMissionStatus(widget.mission.id, rate);
+      if(widget.mission.type == MissionType.debug || widget.mission.type == MissionType.complete) {
+        authService.updateMissionStatus(widget.mission.id, rate,_codeController.text.trim(),null);
+      }
+      else if(widget.mission.type == MissionType.test) {
+        authService.updateMissionStatus(widget.mission.id, rate,null,_currentAnswer.toString());
+      }
+      else{
+        authService.updateMissionStatus(widget.mission.id, rate,null,null);
+      }
     } else if (!widget.isLearningPath) {
       authService.updateFailedNb(widget.mission.id);
     } else if (isCorrect && widget.isLearningPath) {
