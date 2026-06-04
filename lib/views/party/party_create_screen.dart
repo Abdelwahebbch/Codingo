@@ -175,7 +175,6 @@ class _PartyCreateScreenState extends State<PartyCreateScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Party Name
                 Text(
                   'Party Name',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -201,7 +200,6 @@ class _PartyCreateScreenState extends State<PartyCreateScreen> {
                 ),
                 const SizedBox(height: 30),
       
-                // Max Members
                 Text(
                   'Maximum Members: $_maxMembers',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -222,7 +220,6 @@ class _PartyCreateScreenState extends State<PartyCreateScreen> {
                 ),
                 const SizedBox(height: 30),
       
-                // Difficulty
                 Text(
                   'Difficulty Level',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -267,7 +264,6 @@ class _PartyCreateScreenState extends State<PartyCreateScreen> {
                 ),
                 const SizedBox(height: 30),
       
-                // Game Mode
                 Text(
                   'Game Mode',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -311,7 +307,6 @@ class _PartyCreateScreenState extends State<PartyCreateScreen> {
                 ),
                 const SizedBox(height: 30),
       
-                // Total Rounds
                 Text(
                   'Total Rounds: $_totalRounds',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -343,7 +338,6 @@ class _PartyCreateScreenState extends State<PartyCreateScreen> {
                     }),
                 const SizedBox(height: 40),
       
-                // Create Button
                 SizedBox(
                   width: double.infinity,
                   height: 56,

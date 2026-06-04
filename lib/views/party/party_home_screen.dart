@@ -35,7 +35,6 @@ class _PartyHomeScreenState extends State<PartyHomeScreen> {
                 
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Header
                 const SizedBox(height: 20),
                 Center(
                   child: Text(
@@ -60,7 +59,6 @@ class _PartyHomeScreenState extends State<PartyHomeScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    // Create Party Card
                     GestureDetector(
                       onTap: () {
                         Navigator.push(
@@ -133,7 +131,6 @@ class _PartyHomeScreenState extends State<PartyHomeScreen> {
                     ),
                     const SizedBox(height: 50),
 
-                    // Join Party Card
                     GestureDetector(
                       onTap: () {
                         Navigator.push(

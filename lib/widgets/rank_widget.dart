@@ -108,3 +108,4 @@ class RankWidget extends StatelessWidget {
     );
   }
 }
+

@@ -215,7 +215,7 @@ class _MissionDetailScreenState extends State<MissionDetailScreen> {
             const Text(
               "CODE",
               style: TextStyle(
-                color: AppTheme.accentColor, // Ensure AppTheme is imported
+                color: AppTheme.accentColor, 
                 fontWeight: FontWeight.bold,
                 fontSize: 12,
               ),
@@ -249,7 +249,6 @@ class _MissionDetailScreenState extends State<MissionDetailScreen> {
                 fontSize: 12,
               ),
             ),
-            // const SizedBox(height: 8),
             TextField(
               onChanged: (txt) {
                 _currentAnswer = txt.trim();
@@ -259,7 +258,6 @@ class _MissionDetailScreenState extends State<MissionDetailScreen> {
         );
       case MissionType.multipleChoice:
       case MissionType.singleChoice:
-        //TODO : mission hybride (e.g single choice + code )
         if (widget.mission.initialCode == null) {
           return ChoiceChallenge(
               mission: widget.mission,
@@ -449,7 +447,6 @@ class _MissionDetailScreenState extends State<MissionDetailScreen> {
         actions: [
           TextButton(
             onPressed: () async {
-              //debugPrint("XP = ${authService.progress.experience}");
               if (isCorrect) {
                 if (widget.isLearningPath) {
                   Navigator.pop(context);

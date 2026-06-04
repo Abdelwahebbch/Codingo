@@ -74,7 +74,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               value: _notificationsEnabled,
               activeTrackColor: AppTheme.primaryColor,
               onChanged: (val) {
-                //=> setState(() => _notificationsEnabled = val)
 
                 showDialog(
                     context: context,
@@ -133,15 +132,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: 40),
             ElevatedButton(
               onPressed: () async {
-                // Navigate away FIRST — removes all current widgets from the tree
-                // so nothing crashes when DataProvider clears itself a moment later.
                 Navigator.of(context).pushAndRemoveUntil(
                   MaterialPageRoute(builder: (_) => const LoginScreen()),
                   (route) => false,
                 );
-
-                // Sign out after navigation — DataProvider will self-clear via its
-                // AuthProvider listener, but no mounted widget will be affected.
                 await auth.signOut();
               },
               style: ElevatedButton.styleFrom(

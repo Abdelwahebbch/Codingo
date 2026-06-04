@@ -30,10 +30,9 @@ class _LearningPathScreenState extends State<LearningPathScreen>
   void initState() {
     super.initState();
 
-    // Merge all missions from all concepts into one listenable
     final allMissions = widget.learningPath.concepts
         .expand((c) => c.relatedMissionss)
-        .toSet() // avoid duplicates if missions are shared between concepts
+        .toSet() 
         .map((m) => m.isCompleted)
         .toList();
     _allMissionsListenable = Listenable.merge(allMissions);
@@ -63,7 +62,7 @@ class _LearningPathScreenState extends State<LearningPathScreen>
   void _updateProgressAnimation() {
     final newValue = widget.learningPath.overallProgressPercentage / 100;
     _progressAnimation = Tween<double>(
-      begin: _progressAnimation.value, // animate FROM current position
+      begin: _progressAnimation.value, 
       end: newValue,
     ).animate(CurvedAnimation(
       parent: _progressAnimationController,
@@ -120,7 +119,6 @@ class _LearningPathScreenState extends State<LearningPathScreen>
         return SingleChildScrollView(
           child: Column(
             children: [
-              // Overall Progress
               Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
@@ -212,7 +210,6 @@ class _LearningPathScreenState extends State<LearningPathScreen>
                 ),
               ),
 
-              // Level and Time Info
               Padding(
                 padding: const EdgeInsets.all(20),
                 child: Column(
@@ -266,7 +263,6 @@ class _LearningPathScreenState extends State<LearningPathScreen>
                 ),
               ),
 
-              // Next Steps
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Column(
@@ -523,7 +519,6 @@ class _LearningPathScreenState extends State<LearningPathScreen>
       ),
       child: Column(
         children: [
-          // Milestone Header
           Container(
             decoration: BoxDecoration(
               color: milestone.isCompleted
@@ -604,7 +599,6 @@ class _LearningPathScreenState extends State<LearningPathScreen>
             ),
           ),
 
-          // Progress Bar
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -646,7 +640,6 @@ class _LearningPathScreenState extends State<LearningPathScreen>
             ),
           ),
 
-          // Related Concepts
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Column(

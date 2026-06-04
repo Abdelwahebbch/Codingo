@@ -96,7 +96,6 @@ class _PartyResultsScreenState extends State<PartyResultsScreen>
   Widget build(BuildContext context) {
     final authService = Provider.of<PartyDataProvider>(context, listen: false);
     if (_isLoading) {
-      //TODO : lazem ttbaddel
       return const SafeArea(
         child: Scaffold(
           body: Center(
@@ -128,7 +127,6 @@ class _PartyResultsScreenState extends State<PartyResultsScreen>
         body: SingleChildScrollView(
           child: Column(
             children: [
-              // Winner Section
               Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
@@ -203,7 +201,6 @@ class _PartyResultsScreenState extends State<PartyResultsScreen>
                 ),
               ),
 
-              // Rankings
               Padding(
                 padding: const EdgeInsets.all(20),
                 child: Column(
@@ -339,7 +336,6 @@ class _PartyResultsScreenState extends State<PartyResultsScreen>
                 ),
               ),
 
-              // Stats Summary
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Container(
@@ -416,7 +412,6 @@ class _PartyResultsScreenState extends State<PartyResultsScreen>
                 ),
               ),
 
-              // Action Buttons
               Padding(
                 padding: const EdgeInsets.all(20),
                 child: Column(

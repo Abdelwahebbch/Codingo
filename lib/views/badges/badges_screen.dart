@@ -157,7 +157,6 @@ class _BadgesScreenState extends State<BadgesScreen>
     double aiWhisperer = (authService.progress.totalAIQuestions / 50) > 1
         ? 1
         : (authService.progress.totalAIQuestions / 50);
-    //TODO : lazem dynamique
     return SingleChildScrollView(
         child: Column(
       children: [

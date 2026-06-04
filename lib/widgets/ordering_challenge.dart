@@ -23,7 +23,6 @@ class _OrderingChallengeState extends State<OrderingChallenge> {
   @override
   void initState() {
     super.initState();
-    // Shuffle the options initially for the challenge
     _currentOrder = List.from(widget.mission.options ?? [])..shuffle();
     widget.onOrderChanged(_currentOrder);
   }
@@ -33,7 +32,6 @@ class _OrderingChallengeState extends State<OrderingChallenge> {
     final themeManager = Provider.of<ThemeManager>(context);
 
     final isDark = themeManager.themeMode == ThemeMode.dark;
-    //TODO : order missions by diff 
     return ReorderableListView(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),

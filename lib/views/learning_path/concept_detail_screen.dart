@@ -58,7 +58,6 @@ class _ConceptDetailScreenState extends State<ConceptDetailScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header with Icon and Title
               Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
@@ -131,75 +130,78 @@ class _ConceptDetailScreenState extends State<ConceptDetailScreen> {
                 ),
               ),
 
-              // Progress Section
-          ListenableBuilder(
-  listenable: Listenable.merge(
-    widget.concept.relatedMissionss.map((m) => m.isCompleted).toList(),
-  ),
-  builder: (context, _) {
-    return Padding(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Your Progress',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
+              ListenableBuilder(
+                listenable: Listenable.merge(
+                  widget.concept.relatedMissionss
+                      .map((m) => m.isCompleted)
+                      .toList(),
+                ),
+                builder: (context, _) {
+                  return Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Your Progress',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                            ),
+                            Text(
+                              '${(widget.concept.completionPercentage * 100).round()}%',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.primaryColor,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: LinearProgressIndicator(
+                            value: widget.concept.completionPercentage,
+                            minHeight: 12,
+                            backgroundColor: Colors.grey.withValues(alpha: 0.2),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              widget.concept.isCompleted
+                                  ? Colors.green
+                                  : AppTheme.primaryColor,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        if (widget.concept.startedAt != null)
+                          Column(
+                            children: [
+                              _buildProgressInfo(
+                                'Started',
+                                _formatDate(widget.concept.startedAt!),
+                                '📅',
+                              ),
+                              const SizedBox(height: 8),
+                              if (widget.concept.completedAt != null)
+                                _buildProgressInfo(
+                                  'Completed',
+                                  _formatDate(widget.concept.completedAt!),
+                                  '✅',
+                                ),
+                            ],
+                          ),
+                      ],
                     ),
+                  );
+                },
               ),
-              Text(
-                '${(widget.concept.completionPercentage * 100).round()}%',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.primaryColor,
-                  fontSize: 16,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: LinearProgressIndicator(
-              value: widget.concept.completionPercentage,
-              minHeight: 12,
-              backgroundColor: Colors.grey.withValues(alpha: 0.2),
-              valueColor: AlwaysStoppedAnimation<Color>(
-                widget.concept.isCompleted
-                    ? Colors.green
-                    : AppTheme.primaryColor,
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          if (widget.concept.startedAt != null)
-            Column(
-              children: [
-                _buildProgressInfo(
-                  'Started',
-                  _formatDate(widget.concept.startedAt!),
-                  '📅',
-                ),
-                const SizedBox(height: 8),
-                if (widget.concept.completedAt != null)
-                  _buildProgressInfo(
-                    'Completed',
-                    _formatDate(widget.concept.completedAt!),
-                    '✅',
-                  ),
-              ],
-            ),
-        ],
-      ),
-    );
-  },
-),
 
-              // Description
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Column(
@@ -220,7 +222,6 @@ class _ConceptDetailScreenState extends State<ConceptDetailScreen> {
                 ),
               ),
 
-              // Prerequisites
               if (prerequisiteConcepts.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.all(20),
@@ -290,9 +291,6 @@ class _ConceptDetailScreenState extends State<ConceptDetailScreen> {
                   ),
                 ),
 
-              // Related Missions
-
-              // if (widget.concept.relatedMissionsIds.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.all(20),
                 child: Column(
