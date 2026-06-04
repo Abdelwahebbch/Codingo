@@ -36,48 +36,35 @@ class DataProvider extends ChangeNotifier {
     required this.dataRepository,
     required AuthProvider authProvider,
   }) : _authProvider = authProvider {
-    // ─── React to every future auth-state change ──────────────────────────
     _authProvider.addListener(_onAuthChanged);
-
-    // ─── Handle the case where AuthProvider already finished init()
-    //     before this listener was attached (possible with fast storage).
     if (_authProvider.status == AuthStatus.authenticated) {
-      // Use microtask so we don't call init() inside a constructor body
-      // while the provider tree is still being built.
       Future.microtask(init);
     }
-    // ─────────────────────────────────────────────────────────────────────
   }
 
-  // ─── Auth listener ───────────────────────────────────────────────────────
   void _onAuthChanged() {
     switch (_authProvider.status) {
       case AuthStatus.authenticated:
-        // A user just signed in (or init confirmed an existing session).
         init();
         break;
       case AuthStatus.unauthenticated:
-        // User signed out - wipe local data so nothing leaks between sessions.
         _clearData();
         break;
       case AuthStatus.uninitialized:
-        // Still checking - nothing to do yet.
         break;
     }
   }
 
   @override
   void dispose() {
-    // Always remove the listener to prevent memory leaks.
     _authProvider.removeListener(_onAuthChanged);
     super.dispose();
   }
-  // ─────────────────────────────────────────────────────────────────────────
 
-  bool _isInitializing = false; // add this field
+  bool _isInitializing = false; 
 
   Future<void> init() async {
-    if (_isInitializing) return; // ← already running, skip
+    if (_isInitializing) return; 
     _isInitializing = true;
     _isLoading = true;
     notifyListeners();
@@ -95,7 +82,6 @@ class DataProvider extends ChangeNotifier {
     }
   }
 
-  /// Wipe all user-specific state when the session ends.
   void _clearData() {
     progress = _emptyUserInfo();
     path = null;
@@ -105,8 +91,6 @@ class DataProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ─── Static helper so _emptyUserInfo can be called both in the field
-  //     initializer and in _clearData() without repeating the literal.
   static UserInfo _emptyUserInfo() {
     return UserInfo(
       progLanguage: 'not selected',

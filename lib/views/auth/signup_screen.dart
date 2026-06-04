@@ -23,7 +23,6 @@ class _SignupScreenState extends State<SignupScreen> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
       TextEditingController();
-  bool _isSubmitting = false;
   @override
   void dispose() {
     _nameController.dispose();
@@ -91,7 +90,6 @@ class _SignupScreenState extends State<SignupScreen> {
       );
       return;
     }
-    setState(() => _isSubmitting = true);
     try {
       await authProvider.signUp(
         email: _emailController.text.trim(),

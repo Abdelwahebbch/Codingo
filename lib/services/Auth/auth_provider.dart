@@ -12,22 +12,14 @@ class AuthProvider extends ChangeNotifier {
   bool _isLoading = false;
   AuthStatus _status = AuthStatus.uninitialized;
 
-  // ─── Awaitable init ───────────────────────────────────────────────────────
-  // Anyone who needs to wait for the very first auth check can do:
-  //   await authProvider.initialized;
-  // It completes exactly once, after the first init() call finishes.
+
   final Completer<void> _initCompleter = Completer<void>();
   Future<void> get initialized => _initCompleter.future;
-  // ─────────────────────────────────────────────────────────────────────────
-
   AuthProvider({required this.authRepository});
 
   AuthStatus get status => _status;
   bool get isLoading => _isLoading;
   UserModel? get currentUser => _currentUser;
-
-  /// Called once from main.dart via the cascade `..init()`.
-  /// Determines whether a valid session already exists.
   Future<void> init() async {
     try {
       _isLoading = true;
@@ -54,8 +46,6 @@ class AuthProvider extends ChangeNotifier {
     } finally {
       _isLoading = false;
       notifyListeners();
-
-      // Signal that the first auth check is done (fires only once).
       if (!_initCompleter.isCompleted) {
         _initCompleter.complete();
       }
@@ -91,7 +81,6 @@ class AuthProvider extends ChangeNotifier {
       try {
         await authRepository.signIn(email: email, password: password);
       } on AppwriteException catch (e) {
-        // Session already open - that is fine, just proceed to refresh state.
         if (e.type != 'user_session_already_exists') rethrow;
         debugPrint('AuthProvider.signIn - session already active, refreshing…');
       }
