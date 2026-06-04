@@ -15,7 +15,6 @@ import 'package:pfe_test/services/Data/data_repository.dart';
 class DataProvider extends ChangeNotifier {
   final DataRepository dataRepository;
 
-  // Private - access via getter so the field cannot be accidentally replaced.
   final AuthProvider _authProvider;
   AuthProvider get authProvider => _authProvider;
 
@@ -25,12 +24,10 @@ class DataProvider extends ChangeNotifier {
   AuthStatus _status = AuthStatus.uninitialized;
   AuthStatus get status => _status;
 
-  // ─── User data ────────────────────────────────────────────────────────────
   UserInfo progress = _emptyUserInfo();
   bool isFirstLogin = false;
   LearningPath? path;
   Map<String, dynamic>? userGoals;
-  // ─────────────────────────────────────────────────────────────────────────
 
   DataProvider({
     required this.dataRepository,
@@ -276,13 +273,10 @@ class DataProvider extends ChangeNotifier {
         path = await fetchLearningPath(_authProvider.currentUser!.id);
       } on AppwriteException catch (e) {
         if (e.code == 404) {
-          //TODO Call for creating LP
-          print("Aloooo 1");
           AppwritecloudfunctionsService.createLearningPath(
               id: authProvider.currentUser!.id,
               desc: userGoals!,
               progLang: progress.progLanguage);
-          print("Aloooo 2");
           debugPrint('DataProvider.getUserInfo - no learning path yet');
         }
       }
