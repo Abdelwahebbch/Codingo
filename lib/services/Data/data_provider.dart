@@ -436,17 +436,15 @@ class DataProvider extends ChangeNotifier {
         await dataRepository.updateRow(
           tableId: 'missions',
           rowId: id,
-          data: {'isCompleted': true, 'rate': rate,'solution': code},
+          data: {'isCompleted': true, 'rate': rate, 'solution': code},
         );
-      }
-      else if(output!=null){
+      } else if (output != null) {
         await dataRepository.updateRow(
           tableId: 'missions',
           rowId: id,
-          data: {'isCompleted': true, 'rate': rate,'solution': output},
+          data: {'isCompleted': true, 'rate': rate, 'solution': output},
         );
-      }
-      else {
+      } else {
         await dataRepository.updateRow(
           tableId: 'missions',
           rowId: id,
@@ -717,7 +715,10 @@ class DataProvider extends ChangeNotifier {
         ),
         dataRepository.getRows(
           tableId: 'learning_path_missions',
-          queries: [Query.equal('learningPathId', learningPathId)],
+          queries: [
+            Query.equal('learningPathId', learningPathId),
+            Query.limit(100),
+          ],
         ),
       ]);
 
@@ -739,12 +740,14 @@ class DataProvider extends ChangeNotifier {
             return Mission.testMission(doc);
         }
       }).toList();
+      print("Missions ${missions.length}");
 
       final concepts = results[0]
           .rows
           .map((d) => Concept.fromJson(d.data, missions))
           .toList();
 
+      print("concepts ${concepts.length}");
       final milestones = results[1]
           .rows
           .map((d) => LearningPathMilestone.fromJson(d.data, concepts))
