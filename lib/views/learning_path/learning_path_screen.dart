@@ -32,9 +32,11 @@ class _LearningPathScreenState extends State<LearningPathScreen>
 
     final allMissions = widget.learningPath.concepts
         .expand((c) => c.relatedMissionss)
-        .toSet() 
+        .toSet()
         .map((m) => m.isCompleted)
         .toList();
+    final allCompletedMissions =
+        widget.learningPath.missions.where((m) => m.isCompleted.value).toList();
     _allMissionsListenable = Listenable.merge(allMissions);
     _allMissionsListenable.addListener(_updateProgressAnimation);
 
@@ -51,7 +53,7 @@ class _LearningPathScreenState extends State<LearningPathScreen>
     );
     _progressAnimation = Tween<double>(
       begin: 0,
-      end: widget.learningPath.overallProgressPercentage / 100,
+      end: allCompletedMissions.length / widget.learningPath.missions.length,
     ).animate(CurvedAnimation(
       parent: _progressAnimationController,
       curve: Curves.easeOut,
@@ -62,7 +64,7 @@ class _LearningPathScreenState extends State<LearningPathScreen>
   void _updateProgressAnimation() {
     final newValue = widget.learningPath.overallProgressPercentage / 100;
     _progressAnimation = Tween<double>(
-      begin: _progressAnimation.value, 
+      begin: _progressAnimation.value,
       end: newValue,
     ).animate(CurvedAnimation(
       parent: _progressAnimationController,
@@ -209,7 +211,6 @@ class _LearningPathScreenState extends State<LearningPathScreen>
                   ],
                 ),
               ),
-
               Padding(
                 padding: const EdgeInsets.all(20),
                 child: Column(
@@ -262,7 +263,6 @@ class _LearningPathScreenState extends State<LearningPathScreen>
                   ],
                 ),
               ),
-
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Column(
@@ -378,8 +378,7 @@ class _LearningPathScreenState extends State<LearningPathScreen>
                   color: color.withValues(alpha: .2),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 child: Text(
                   '${concepts.length}',
                   style: TextStyle(
@@ -447,17 +446,15 @@ class _LearningPathScreenState extends State<LearningPathScreen>
                     children: [
                       Text(
                         concept.name,
-                        style:
-                            Theme.of(context).textTheme.titleSmall?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
                       ),
                       Text(
                         concept.category,
-                        style:
-                            Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: Colors.grey[600],
-                                ),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Colors.grey[600],
+                            ),
                       ),
                     ],
                   ),
@@ -465,8 +462,7 @@ class _LearningPathScreenState extends State<LearningPathScreen>
                 if (isLocked)
                   const Icon(Icons.lock, size: 20, color: Colors.grey)
                 else if (concept.isCompleted)
-                  const Icon(Icons.check_circle,
-                      size: 20, color: Colors.green)
+                  const Icon(Icons.check_circle, size: 20, color: Colors.green)
                 else
                   Text(
                     '${(concept.completionPercentage * 100).round()}%',
@@ -497,8 +493,8 @@ class _LearningPathScreenState extends State<LearningPathScreen>
 
   Widget _buildMilestoneCard(LearningPathMilestone milestone, int index) {
     final isLocked = index == 0
-      ? false
-      : !widget.learningPath.milestones[index - 1].isCompleted;
+        ? false
+        : !widget.learningPath.milestones[index - 1].isCompleted;
     final relatedConcepts = widget.learningPath.concepts
         .where((c) => milestone.conceptIds.contains(c.id))
         .toList();
@@ -548,12 +544,10 @@ class _LearningPathScreenState extends State<LearningPathScreen>
                         children: [
                           Text(
                             'Milestone ${index + 1}',
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall
-                                ?.copyWith(
-                                  color: Colors.grey[600],
-                                ),
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: Colors.grey[600],
+                                    ),
                           ),
                           Text(
                             milestone.title,
@@ -580,7 +574,7 @@ class _LearningPathScreenState extends State<LearningPathScreen>
                         ),
                         padding: const EdgeInsets.all(8),
                         child: Text(
-                          '${(milestone.completionPercentage *100).round()}%',
+                          '${(milestone.completionPercentage * 100).round()}%',
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             color: AppTheme.primaryColor,
@@ -598,7 +592,6 @@ class _LearningPathScreenState extends State<LearningPathScreen>
               ],
             ),
           ),
-
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -639,7 +632,6 @@ class _LearningPathScreenState extends State<LearningPathScreen>
               ],
             ),
           ),
-
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Column(
