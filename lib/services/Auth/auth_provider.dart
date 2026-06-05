@@ -12,7 +12,6 @@ class AuthProvider extends ChangeNotifier {
   bool _isLoading = false;
   AuthStatus _status = AuthStatus.uninitialized;
 
-
   final Completer<void> _initCompleter = Completer<void>();
   Future<void> get initialized => _initCompleter.future;
   AuthProvider({required this.authRepository});
@@ -101,7 +100,7 @@ class AuthProvider extends ChangeNotifier {
       await authRepository.continueWithGoogle();
       await init();
     } catch (e) {
-      debugPrint('AuthProvider.signInWithGoogle - error: $e');
+      rethrow;
     } finally {
       _isLoading = false;
       notifyListeners();

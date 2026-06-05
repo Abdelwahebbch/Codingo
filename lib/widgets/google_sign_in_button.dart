@@ -21,21 +21,21 @@ class _GoogleSignInButtonState extends State<GoogleSignInButton> {
     try {
       await authService.signInWithGoogle();
       if (!mounted) return;
-      if (dataProvider.isLoading) {
-        await _waitForData(dataProvider);
-      }
-
-      if (!mounted) return;
-
-      if (!mounted) return;
-      _navigateAfterLoad(context, dataProvider);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Google Sign-In failed")),
         );
       }
+      return;
     }
+    print("tresst");
+    if (!mounted) return;
+    if (dataProvider.isLoading) {
+      await _waitForData(dataProvider);
+    }
+    if (!mounted) return;
+    _navigateAfterLoad(context, dataProvider);
   }
 
   Future<void> _waitForData(DataProvider dataProvider) {
@@ -46,6 +46,7 @@ class _GoogleSignInButtonState extends State<GoogleSignInButton> {
         if (!completer.isCompleted) completer.complete();
       }
     }
+
     dataProvider.addListener(listener);
     if (!dataProvider.isLoading && !completer.isCompleted) {
       dataProvider.removeListener(listener);

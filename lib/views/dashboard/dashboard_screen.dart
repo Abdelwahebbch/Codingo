@@ -312,14 +312,15 @@ class DashboardHomeState extends State<DashboardHome> {
                                   style:
                                       Theme.of(context).textTheme.bodyMedium),
                               Text(
-                                  Provider.of<AuthProvider>(context)
-                                      .currentUser!
-                                      .name
-                                      .split(' ')
-                                      .first,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .headlineMedium),
+                                Provider.of<AuthProvider>(context)
+                                        .currentUser
+                                        ?.name
+                                        .split(' ')
+                                        .first ??
+                                    'Guest',
+                                style:
+                                    Theme.of(context).textTheme.headlineMedium,
+                              ),
                             ],
                           ),
                           GestureDetector(
