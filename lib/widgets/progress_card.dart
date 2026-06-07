@@ -88,36 +88,63 @@ class ProgressCard extends StatelessWidget {
                         color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: Text("${user.totalPoints} 💎",
-                          style: const TextStyle(
+                      // Animated Total Points
+                      child: TweenAnimationBuilder<int>(
+                        tween: IntTween(begin: 0, end: user.totalPoints),
+                        duration: const Duration(milliseconds: 1500),
+                        curve: Curves.easeOutQuart,
+                        builder: (context, value, child) {
+                          return Text(
+                            "$value 💎",
+                            style: const TextStyle(
                               color: Colors.white,
-                              fontWeight: FontWeight.bold)),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          );
+                        },
+                      ),
                     ),
                   ],
                 ),
               ],
             ),
             const SizedBox(height: 10),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: LinearProgressIndicator(
-                value: user.progressToNextLevel,
-                backgroundColor: Colors.white.withValues(alpha: 0.2),
-                valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
-                minHeight: 10,
-              ),
-            ),
-            const SizedBox(height: 10),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                    "${(user.progressToNextLevel * 100).toInt()}% to Level ${user.userLevel + 1}",
-                    style:
-                        const TextStyle(color: Colors.white70, fontSize: 12)),
-                const Text("Tap to view learning path",
-                    style: TextStyle(color: Colors.white70, fontSize: 12)),
-              ],
+            // Animated Progress Bar and Percentage Text
+            TweenAnimationBuilder<double>(
+              tween: Tween<double>(begin: 0.0, end: user.progressToNextLevel),
+              duration: const Duration(milliseconds: 2000),
+              curve: Curves.easeOutQuart,
+              builder: (context, value, child) {
+                return Column(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: LinearProgressIndicator(
+                        value: value,
+                        backgroundColor: Colors.white.withValues(alpha: 0.2),
+                        valueColor:
+                            const AlwaysStoppedAnimation<Color>(Colors.white),
+                        minHeight: 10,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          "${(value * 100).toInt()}% to Level ${user.userLevel + 1}",
+                          style: const TextStyle(
+                              color: Colors.white70, fontSize: 12),
+                        ),
+                        const Text(
+                          "Tap to view learning path",
+                          style: TextStyle(color: Colors.white70, fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  ],
+                );
+              },
             ),
           ],
         ),
