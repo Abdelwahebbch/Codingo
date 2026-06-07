@@ -20,7 +20,7 @@ class _GoogleSignInButtonState extends State<GoogleSignInButton> {
     final dataProvider = Provider.of<DataProvider>(context, listen: false);
     try {
       await authService.signInWithGoogle();
-      if (!mounted) return;
+   
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -29,7 +29,7 @@ class _GoogleSignInButtonState extends State<GoogleSignInButton> {
       }
       return;
     }
-    print("tresst");
+  
     if (!mounted) return;
     if (dataProvider.isLoading) {
       await _waitForData(dataProvider);
